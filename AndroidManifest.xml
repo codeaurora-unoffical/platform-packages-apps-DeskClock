@@ -152,6 +152,7 @@
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="com.android.deskclock.AUTO_POWER_ON_OFF" />
             </intent-filter>
         </receiver>
 
