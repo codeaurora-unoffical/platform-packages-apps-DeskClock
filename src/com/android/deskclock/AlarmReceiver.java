@@ -97,7 +97,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         if (alarm == null) {
             Log.wtf("Failed to parse the alarm from the intent");
             // Make sure we set the next alert if needed.
-            Alarms.setNextAlert(context);
+            //Alarms.setNextAlert(context);
             return;
         }
 
