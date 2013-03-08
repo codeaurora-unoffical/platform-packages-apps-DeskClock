@@ -30,6 +30,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public final class Alarm implements Parcelable {
+	
+	public  static final int ALARM_TYPE_NORMAL=0;
+	public static final int ALARM_TYPE_POWERON=1;
+	public static final int ALARM_TYPE_POWEROFF=2;
+	public static final int ALARM_TYPE_SNOOZE=3;
 
     //////////////////////////////
     // Parcelable apis
@@ -60,6 +65,7 @@ public final class Alarm implements Parcelable {
         p.writeString(label);
         p.writeParcelable(alert, flags);
         p.writeInt(silent ? 1 : 0);
+        p.writeInt(type);
     }
     //////////////////////////////
     // end Parcelable apis
@@ -166,7 +172,9 @@ public final class Alarm implements Parcelable {
     public String     label;
     public Uri        alert;
     public boolean    silent;
-
+    public int  type;//0 normal  1 auto power on 2 auto power off  3 snooze
+    public boolean   hasNextAlarm;
+	
     @Override
     public String toString() {
         return "Alarm{" +
@@ -184,6 +192,8 @@ public final class Alarm implements Parcelable {
     }
 
     public Alarm(Cursor c) {
+    	hasNextAlarm=false;
+    	type=ALARM_TYPE_NORMAL;
         id = c.getInt(Columns.ALARM_ID_INDEX);
         enabled = c.getInt(Columns.ALARM_ENABLED_INDEX) == 1;
         hour = c.getInt(Columns.ALARM_HOUR_INDEX);
@@ -223,19 +233,33 @@ public final class Alarm implements Parcelable {
         label = p.readString();
         alert = (Uri) p.readParcelable(null);
         silent = p.readInt() == 1;
+        type=p.readInt();
+        hasNextAlarm=false;
     }
 
     // Creates a default alarm at the current time.
     public Alarm() {
+    	hasNextAlarm=false;
         id = -1;
         hour = 0;
         minutes = 0;
-        vibrate = true;
+        vibrate = false;
         daysOfWeek = new DaysOfWeek(0);
         label = "";
         alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        type=ALARM_TYPE_NORMAL;
     }
-
+      public Alarm(int _alarmid,int _hour,int _minutes,int _type) {
+    	  id=_alarmid;
+    	  hour=_hour;
+    	  minutes=_minutes;
+    	  time=0;
+    	  vibrate=false;
+    	  daysOfWeek = new DaysOfWeek(127);//0111 1111
+    	  type=_type;
+    	  hasNextAlarm=false;
+      }
+	  
     public String getLabelOrDefault(Context context) {
         if (label == null || label.length() == 0) {
             return context.getString(R.string.default_label);
@@ -366,6 +390,11 @@ public final class Alarm implements Parcelable {
 
         public void set(DaysOfWeek dow) {
             mDays = dow.mDays;
+        }
+
+	// wangdanyang add
+        public void set(int days) {
+            mDays = days;
         }
 
         public int getCoded() {

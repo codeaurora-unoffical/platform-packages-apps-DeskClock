@@ -17,11 +17,13 @@
 package com.android.deskclock;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
@@ -53,6 +55,7 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
     // These defaults must match the values in res/xml/settings.xml
     private static final String DEFAULT_SNOOZE = "10";
     protected static final String SCREEN_OFF = "screen_off";
+    private static final String TAG = "AlarmAlertFullScreen";
 
     protected Alarm mAlarm;
     private int mVolumeBehavior;
@@ -66,6 +69,7 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
     private static final long PING_AUTO_REPEAT_DELAY_MSEC = 1200;
 
     private boolean mPingEnabled = true;
+	public static boolean mTypeFlag = false;
 
     // Receives the ALARM_KILLED action from the AlarmKlaxon,
     // and also ALARM_SNOOZE_ACTION / ALARM_DISMISS_ACTION from other applications
@@ -254,6 +258,47 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
         return (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     }
 
+    private void startShutdownActivity() {
+       // Log.w("AlarmAlertFullScreen--------- startShutdownActivity()! ");
+    	
+    	Intent requestShutdown = new Intent(PlatformConfig.ACTION_REQUEST_SHUTDOWN);//(Intent.ACTION_REQUEST_SHUTDOWN);
+        requestShutdown.putExtra(PlatformConfig.EXTRA_KEY_CONFIRM, false);//(Intent.EXTRA_KEY_CONFIRM, false);
+        AlarmAlertFullScreen.this.startActivity(requestShutdown);
+    }
+
+    private void shutdown(Boolean confirm) {
+        if (confirm) {
+            AlertDialog.Builder AlertDialog = new AlertDialog.Builder(this);
+            AlertDialog.setIcon(android.R.drawable.ic_menu_info_details);
+            AlertDialog.setTitle(R.string.shutdown_title);
+            AlertDialog.setMessage(R.string.shutdown_text);
+
+            AlertDialog.setPositiveButton(R.string.shutdown_yes,
+                    new DialogInterface.OnClickListener(){
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                            return;
+                        }
+                    }
+            );
+
+            AlertDialog.setNegativeButton(R.string.shutdown_no,
+                    new DialogInterface.OnClickListener(){
+                        public void onClick(DialogInterface dialog, int which) {
+                            startShutdownActivity();
+                        }
+                    }
+            );
+
+            AlertDialog.show();
+
+        } else {
+            startShutdownActivity();
+        }
+
+        return;
+    }
+    
     // Dismiss the alarm.
     private void dismiss(boolean killed, boolean replaced) {
         if (LOG) {
@@ -269,6 +314,16 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
             nm.cancel(mAlarm.id);
             stopService(new Intent(Alarms.ALARM_ALERT_ACTION));
         }
+    	if(mAlarm.type==Alarm.ALARM_TYPE_POWERON)
+	    {
+		    if(mTypeFlag)
+		    {
+		    	mTypeFlag = false;
+		    	Intent poweralert = new Intent(AlarmAlertFullScreen.this, PowerOnAlert.class);
+		    	startActivity(poweralert);
+	    	}	
+		 
+	    }	
         if (!replaced) {
             finish();
         }

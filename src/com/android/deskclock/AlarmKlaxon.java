@@ -34,6 +34,10 @@ import android.preference.PreferenceManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import android.provider.Settings;
 
 /**
  * Manages alarms and vibe. Runs as a service so that it can continue to play
@@ -53,6 +57,9 @@ public class AlarmKlaxon extends Service {
     private TelephonyManager mTelephonyManager;
     private int mInitialCallState;
 
+	// wangzhihao add >>>>
+    private boolean mPoweroffAlarm = false;
+
     // Internal messages
     private static final int KILLER = 1000;
     private Handler mHandler = new Handler() {
@@ -65,6 +72,15 @@ public class AlarmKlaxon extends Service {
                     }
                     sendKillBroadcast((Alarm) msg.obj, false);
                     stopSelf();
+                    
+                    // wangzhihao add>>>>
+                    // If powe on due to alarm, and no user operation, implement to power off after 2 minutes.
+                    if (mPoweroffAlarm) {
+                        if (Log.LOGV) Log.v("AlarmKlaxon.handler____Power off due to alarm timeout.");
+                        Alarms.poweroffImme(AlarmKlaxon.this);
+                    }
+                    // wangzhihao add <<<<
+                    
                     break;
             }
         }
@@ -122,6 +138,12 @@ public class AlarmKlaxon extends Service {
 
         final Alarm alarm = intent.getParcelableExtra(
                 Alarms.ALARM_INTENT_EXTRA);
+                
+        // wangzhihao add 
+        if (!mPoweroffAlarm) {
+            mPoweroffAlarm = intent.getBooleanExtra(Alarms.POWER_OFF_ALARM_FLAG, false);
+        }
+	 	// add end
 
         if (alarm == null) {
             Log.v("AlarmKlaxon failed to parse the alarm from the intent");
@@ -208,9 +230,11 @@ public class AlarmKlaxon extends Service {
                 // now. Use the fallback ringtone.
                 try {
                     // Must reset the media player to clear the error state.
+                	alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
                     mMediaPlayer.reset();
-                    setDataSourceFromResource(getResources(), mMediaPlayer,
-                            R.raw.fallbackring);
+					mMediaPlayer.setDataSource(this, alert);
+                    //setDataSourceFromResource(getResources(), mMediaPlayer,
+                    //        R.raw.fallbackring);
                     startAlarm(mMediaPlayer);
                 } catch (Exception ex2) {
                     // At this point we just don't play anything.
