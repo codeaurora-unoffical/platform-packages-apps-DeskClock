@@ -69,6 +69,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
         LabelDialogFragment.AlarmLabelDialogHandler,
         OnLongClickListener, Callback, DialogInterface.OnClickListener {
 
+	static final String PREFERENCES = "AlarmClock";
     private static final String KEY_EXPANDED_IDS = "expandedIds";
     private static final String KEY_REPEAT_CHECKED_IDS = "repeatCheckedIds";
     private static final String KEY_RINGTONE_TITLE_CACHE = "ringtoneTitleCache";
