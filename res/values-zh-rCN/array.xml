@@ -299,4 +299,12 @@
     <item msgid="2738289235744819761">"海得拉巴"</item>
     <item msgid="35629823970779893">"雷斯顿"</item>
   </string-array>
+  
+  <string-array name="alarm_repeat_entries">
+    <item>单次</item>
+    <item>每天</item>
+    <item>工作日</item>
+    <item>休息日</item>
+    <item>每周任选</item>
+  </string-array>
 </resources>
