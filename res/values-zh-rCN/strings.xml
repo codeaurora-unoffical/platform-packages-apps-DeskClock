@@ -330,4 +330,13 @@
     <string name="timer_delete_confirmation" msgid="2815524107015816453">"是否删除此计时器？"</string>
     <string name="city_delete_confirmation" msgid="1783441538785676299">"是否删除此城市？"</string>
     <string name="digital_gadget" msgid="2326954556720571358">"数字时钟"</string>
+    <string name="auto_off_cancelled">"自动关机已取消"</string>
+    <!-- When power off alarm is dismissed, ask user whether power off -->
+    <string name="shutdown_title">闹钟已解除</string>
+    <string name="shutdown_text">现在开机吗？</string>
+    <string name="shutdown_yes">是</string>
+    <string name="shutdown_no">否</string>
+    <string name="label_length_is_max">标签长度已达最大值!</string>   
+    <string name="power_on_off_text">是否开机？</string>
+    <string  name="other">其它</string>
 </resources>

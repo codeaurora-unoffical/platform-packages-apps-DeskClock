@@ -53,6 +53,10 @@ import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 
 import com.android.deskclock.widget.ActionableToastBar;
 import com.android.deskclock.widget.swipeablelistview.SwipeableListView;
@@ -69,6 +73,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
         LabelDialogFragment.AlarmLabelDialogHandler,
         OnLongClickListener, Callback, DialogInterface.OnClickListener {
 
+	static final String PREFERENCES = "AlarmClock";
     private static final String KEY_EXPANDED_IDS = "expandedIds";
     private static final String KEY_REPEAT_CHECKED_IDS = "repeatCheckedIds";
     private static final String KEY_RINGTONE_TITLE_CACHE = "ringtoneTitleCache";
@@ -98,13 +103,16 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
     // Saved states for undo
     private Alarm mDeletedAlarm;
     private boolean mUndoShowing = false;
-
+    private Context context = null;
+    private int mSelect = 0;
+    
     @Override
     protected void onCreate(Bundle savedState) {
         super.onCreate(savedState);
         initialize(savedState);
         updateLayout();
         getLoaderManager().initLoader(0, null, this);
+        context = this;
     }
 
     private void initialize(Bundle savedState) {
@@ -775,6 +783,75 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
                 itemHolder.repeat.setChecked(false);
                 itemHolder.repeatDays.setVisibility(View.GONE);
             }
+
+            itemHolder.repeat.setOnCheckedChangeListener(new OnCheckedChangeListener(){
+
+			    public void onCheckedChanged(CompoundButton buttonView,
+				    	boolean isChecked) {
+				    // TODO Auto-generated method stub
+				 mSelect = 0;
+				 if(isChecked){
+                     new AlertDialog.Builder(context)
+                                    .setTitle(getString(R.string.alarm_repeat))
+                                    .setSingleChoiceItems(context.getResources().getStringArray(R.array.alarm_repeat_entries),0, new DialogInterface.OnClickListener() {
+                						public void onClick(DialogInterface dialog, int which) {
+                                           mSelect = which;
+                                        }                         
+                					})
+                                    .setPositiveButton(android.R.string.ok,
+                                              new DialogInterface.OnClickListener() {
+                                                 public void onClick(DialogInterface d,
+                                                  int w) {
+                                                switch(mSelect){
+                                                    case 0:
+                                                        itemHolder.repeatDays.setVisibility(View.GONE);
+                                                        mRepeatChecked.remove(alarm.id);
+                                                        final int daysOfWeekCoded = alarm.daysOfWeek.getCoded();
+                                                        mPreviousDaysOfWeekMap.putInt("" + alarm.id, daysOfWeekCoded);
+                                                        alarm.daysOfWeek.set(new Alarm.DaysOfWeek(0));
+                                                        break;
+                                                    case 1:
+                                                        itemHolder.repeatDays.setVisibility(View.VISIBLE);
+                                                        mRepeatChecked.add(alarm.id);
+                                                        for (int day : DAY_ORDER) {
+                                                        alarm.daysOfWeek.setDayOfWeek(day, true);
+                                                        }
+                                                        updateDaysOfWeekButtons(itemHolder, alarm.daysOfWeek);
+                                                        break;
+                                                    case 2:
+                                                        itemHolder.repeatDays.setVisibility(View.VISIBLE);
+                                                        mRepeatChecked.add(alarm.id);
+                                                        for (int day : DAY_ORDER) {
+                                                            if(day == 1 || day == DAY_ORDER.length){
+                                                                alarm.daysOfWeek.setDayOfWeek(day, false);
+                                                            }else{
+                                                                alarm.daysOfWeek.setDayOfWeek(day, true);
+                                                            }
+                                                        }
+                                                        updateDaysOfWeekButtons(itemHolder, alarm.daysOfWeek);
+                                                        break;
+                                                     case 3:
+                                                        itemHolder.repeatDays.setVisibility(View.VISIBLE);
+                                                        mRepeatChecked.add(alarm.id);
+                                                        for (int day : DAY_ORDER) {
+                                                            if(day == 1 || day == DAY_ORDER.length){
+                                                                alarm.daysOfWeek.setDayOfWeek(day, true);
+                                                            }else{
+                                                                alarm.daysOfWeek.setDayOfWeek(day, false);
+                                                            }
+                                                        }
+                                                        updateDaysOfWeekButtons(itemHolder, alarm.daysOfWeek);
+                                                        break;
+                                                        }
+                                                     asyncUpdateAlarm(alarm, false); 
+                                                     }
+                                                     })
+                                          .show();
+
+                 }
+			    }
+			
+    		});
             itemHolder.repeat.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

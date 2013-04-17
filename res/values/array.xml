@@ -901,4 +901,11 @@
         <item>@null</item>
         <item>@null</item>
     </array>
+    <string-array name="alarm_repeat_entries">
+        <item>Once</item>
+        <item>Daily</item>
+        <item>Working days</item>
+        <item>Rest days</item>
+        <item>Weekly</item>
+    </string-array>
 </resources>

@@ -16,6 +16,7 @@
 
 package com.android.deskclock;
 
+import java.util.Calendar;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -23,8 +24,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
+import android.widget.Toast;
 import android.os.PowerManager.WakeLock;
-
+import android.preference.PreferenceManager;
 import java.util.Calendar;
 
 /**
@@ -36,6 +38,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     /** If the alarm is older than STALE_WINDOW, ignore.  It
         is probably the result of a time or timezone change */
     private final static int STALE_WINDOW = 30 * 60 * 1000;
+    private final static float CALL_IDLE_TIME=1f;
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
@@ -49,6 +52,22 @@ public class AlarmReceiver extends BroadcastReceiver {
                 wl.release();
             }
         });
+    }
+    
+    private void handleAutoPoweroffAlarm(Context context){
+    	 Alarms.setNextAlert(context);
+         
+         if (Alarms.isPhoneBusy(context)) {
+             if(Log.LOGV)
+			Log.v("AlarmReceiver____Auto power-off is cancelled due to phone busy.");
+             Toast toast = Toast.makeText(context, context.getResources().getString(R.string.auto_off_cancelled), Toast.LENGTH_LONG);
+             ToastMaster.setToast(toast);
+     	  toast.show();
+             return;
+         }
+         if(Log.LOGV)
+			Log.v("AlarmReceiver____Power off due to auto-off setting.");
+         Alarms.poweroff(context);
     }
 
     private void handleIntent(Context context, Intent intent) {
@@ -102,6 +121,16 @@ public class AlarmReceiver extends BroadcastReceiver {
             return;
         }
 
+        //if phone is busy
+        if(Alarms.isPhoneBusy(context)){
+        	if(alarm.id==Alarms.AUTO_OFF_ALARM_ID){
+        		handleAutoPoweroffAlarm(context);
+        		return;
+        	}
+        	snooze(alarm,context);
+        	return;
+        }
+        
         // Disable the snooze alert if this alarm is the snooze.
         Alarms.disableSnoozeAlert(context, alarm.id);
         // Disable this alarm if it does not repeat.
@@ -123,6 +152,13 @@ public class AlarmReceiver extends BroadcastReceiver {
             Log.v("Ignoring stale alarm");
             return;
         }
+
+        if (alarm.id == Alarms.AUTO_OFF_ALARM_ID) 
+        {
+           handleAutoPoweroffAlarm(context);
+            return;
+        }
+
 
         // Maintain a cpu wake lock until the AlarmAlert and AlarmKlaxon can
         // pick it up.
@@ -203,6 +239,38 @@ public class AlarmReceiver extends BroadcastReceiver {
         // correct notification.
         NotificationManager nm = getNotificationManager(context);
         nm.notify(alarm.id, n);
+    }
+    
+    
+    private void snooze(Alarm alarm,Context context) {
+        final long snoozeTime = System.currentTimeMillis()
+                + ((int)(1000 * 60 * CALL_IDLE_TIME));
+        Alarms.saveSnoozeAlert(context, alarm.id,  snoozeTime);
+
+        // Get the display time for the snooze and update the notification.
+        final Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(snoozeTime);
+
+        // Append (snoozed) to the label.
+        String label = alarm.getLabelOrDefault(context);
+        label = context.getString(R.string.alarm_notify_snooze_label, label);
+
+        // Notify the user that the alarm has been snoozed.
+        Intent cancelSnooze = new Intent(context, AlarmReceiver.class);
+        cancelSnooze.setAction(Alarms.CANCEL_SNOOZE);
+        cancelSnooze.putExtra(Alarms.ALARM_INTENT_EXTRA, alarm);
+        PendingIntent broadcast =
+                PendingIntent.getBroadcast(context, alarm.id, cancelSnooze, 0);
+        NotificationManager nm =  (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification n = new Notification(R.drawable.stat_notify_alarm,
+                label, 0);
+        n.setLatestEventInfo(context, label,
+        		context.getString(R.string.alarm_notify_snooze_text,
+                    Alarms.formatTime(context, c)), broadcast);
+        n.flags |= Notification.FLAG_AUTO_CANCEL
+                | Notification.FLAG_ONGOING_EVENT;
+        nm.notify(alarm.id, n);
+        
     }
 
     private NotificationManager getNotificationManager(Context context) {

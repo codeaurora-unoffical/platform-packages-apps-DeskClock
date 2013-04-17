@@ -30,12 +30,21 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
 import android.provider.Settings;
+import android.telephony.TelephonyManager;
+import android.telephony.MSimTelephonyManager;
+
 import android.text.format.DateFormat;
 
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import android.text.TextUtils;
+
+import com.android.deskclock.Alarm.DaysOfWeek;
 /**
  * The Alarms provider supplies info about Alarm Clock settings
  */
@@ -93,6 +102,10 @@ public class Alarms {
     // AlarmManagerService to avoid a ClassNotFoundException when filling in
     // the Intent extras.
     public static final String ALARM_RAW_DATA = "intent.extra.alarm_raw";
+    
+    // This string is used to identify the alarm id passed to SetAlarm from the
+		// list of alarms.
+		public static final String ALARM_ID = "alarm_id";
 
     private static final String PREF_SNOOZE_IDS = "snooze_ids";
     private static final String PREF_SNOOZE_TIME = "snooze_time";
@@ -105,6 +118,42 @@ public class Alarms {
     final static String M24 = "kk:mm";
 
     final static int INVALID_ALARM_ID = -1;
+    //final static long  TIME_BEFORE_ALARM=30*1000;
+
+		
+	// ============ add begin ===================================
+	// auto-off alarm; id = -10
+	final static String PREF_AUTO_OFF_HOUR = "auto_off_hour";
+	final static String PREF_AUTO_OFF_MIN = "auto_off_min";
+	final static String PREF_AUTO_OFF_FALG = "auto_off_flag";
+	public static final int AUTO_OFF_ALARM_ID = -10;
+
+	// auto-on alarm; id = 0
+	final static String PREF_AUTO_ON_HOUR = "auto_on_hour";
+	final static String PREF_AUTO_ON_MIN = "auto_on_min";
+	final static String PREF_AUTO_ON_FALG = "auto_on_flag";
+	public static final int AUTO_ON_ALARM_ID = 0;
+
+	// power-off-alarm for save to file
+	final static String PREF_POWER_OFF_ALARM_ID = "po_alarm_id";
+	final static String PREF_POWER_OFF_ALARM_TIME = "po_time";
+	final static String PREF_POWER_OFF_ALARM_LABEL = "po_label";
+
+	// true : power off alarm
+	public static final String POWER_OFF_ALARM_FLAG = "intent.extra.po_alarm_flag";
+
+	public static final String ACTION_POWER_OFF = "android.intent.action.POWER_OFF";
+	public static final String ACTION_POWER_OFF_AT_ONCE = "android.intent.action.POWER_OFF_AT_ONCE";
+
+	final static String AUTO_ON_FLAG = "auto_on_flag";
+	final static String AUTO_ON_HOUR = "auto_on_hour";
+	final static String AUTO_ON_MINUTE = "auto_on_minute";
+	final static String AUTO_OFF_FLAG = "auto_off_flag";
+	final static String AUTO_OFF_HOUR = "auto_off_hour";
+	final static String AUTO_OFF_MINUTE = "auto_off_minute";
+
+	// ============  add end ===================================
+	
 
     /**
      * Creates a new Alarm and fills in the given alarm's id.
@@ -133,6 +182,8 @@ public class Alarms {
         ContentResolver contentResolver = context.getContentResolver();
         /* If alarm is snoozing, lose it */
         disableSnoozeAlert(context, alarmId);
+	    disableAutoOffAlert(context);
+	    disableAlert(context);
 
         Uri uri = ContentUris.withAppendedId(Alarm.Columns.CONTENT_URI, alarmId);
         contentResolver.delete(uri, "", null);
@@ -259,6 +310,9 @@ public class Alarms {
             // have the modified alarm fire next.
             clearSnoozeIfNeeded(context, timeInMillis);
         }
+        else{//make sure the alarm is cancled
+			disableAlert( context);          	
+        }
 
         setNextAlert(context);
 
@@ -344,6 +398,35 @@ public class Alarms {
                 cursor.close();
             }
         }
+        
+        //add autopoweron  autopoweroff
+        Alarm autoPoweroffAlarm=getAutoPoweroffAlarm(context);
+        if(autoPoweroffAlarm!=null){
+        	alarms.add(autoPoweroffAlarm);
+        }
+        Alarm autoPoweronAlarm =getAutoPowerOnAlarm(context);
+        if(autoPoweronAlarm!=null){
+	        	//if have a same alarm that set to same time,then not add
+	        	boolean haveSameAlarm=false;
+	        	 for (Alarm a : alarms) {
+	                 // A time of 0 indicates this is a repeating alarm, so
+	                 // calculate the time to get the next alert.
+	                 if (a.time == 0) {
+	                     a.time = calculateAlarm(a);
+	                 }
+	                 autoPoweronAlarm.time=calculateAlarm(autoPoweronAlarm);
+	                 if(autoPoweronAlarm.time==a.time){
+	                	 haveSameAlarm=true;
+	                	 break;
+	                 }
+	        	 }
+	        	 //Log.v("------------------>have same alarm?"+haveSameAlarm);
+	        	 if(!haveSameAlarm){
+	        		 alarms.add(autoPoweronAlarm);
+	        	 }
+            
+        }
+        
 
         Alarm alarm = null;
 
@@ -368,7 +451,127 @@ public class Alarms {
                 alarm = a;
             }
         }
+        
+        if(alarm==null){
+        	return null;
+        }
+        
+        //search if has next enable alarms
+        if(alarms.size()>2){
+        	alarm.hasNextAlarm=true;
+        }else if(alarms.size()==2){
+        	Alarm[] alarmArray =new Alarm[2]; 
+        	alarms.toArray(alarmArray);
+        	if(alarmArray[0].type==Alarm.ALARM_TYPE_POWERON&&alarmArray[1].type==Alarm.ALARM_TYPE_POWEROFF){
+        		alarm.hasNextAlarm=false;
+        	}else if(alarmArray[0].type==Alarm.ALARM_TYPE_POWEROFF&&alarmArray[1].type==Alarm.ALARM_TYPE_POWERON){
+        		alarm.hasNextAlarm=false;
+        	}else{
+        		alarm.hasNextAlarm=true;
+        	}
+        }else if(alarms.size()==1){
+        	alarm.hasNextAlarm=false;
+        }
 
+        return alarm;
+    }
+    
+    
+    
+    
+    private static Alarm calculateNextAlert(final Context context,boolean includePowerOn,boolean includePowerOff) {
+        long minTime = Long.MAX_VALUE;
+        long now = System.currentTimeMillis();
+        final SharedPreferences prefs = context.getSharedPreferences(AlarmClock.PREFERENCES, 0);
+
+        Set<Alarm> alarms = new HashSet<Alarm>();
+
+        // We need to to build the list of alarms from both the snoozed list and the scheduled
+        // list.  For a non-repeating alarm, when it goes of, it becomes disabled.  A snoozed
+        // non-repeating alarm is not in the active list in the database.
+
+        // first go through the snoozed alarms
+        final Set<String> snoozedIds = prefs.getStringSet(PREF_SNOOZE_IDS, new HashSet<String>());
+        for (String snoozedAlarm : snoozedIds) {
+            final int alarmId = Integer.parseInt(snoozedAlarm);
+            final Alarm a = getAlarm(context.getContentResolver(), alarmId);
+            alarms.add(a);
+        }
+
+        // Now add the scheduled alarms
+        final Cursor cursor = getFilteredAlarmsCursor(context.getContentResolver());
+        if (cursor != null) {
+            try {
+                if (cursor.moveToFirst()) {
+                    do {
+                        final Alarm a = new Alarm(cursor);
+                        a.type=Alarm.ALARM_TYPE_NORMAL;
+                        alarms.add(a);
+                    } while (cursor.moveToNext());
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        
+        //add autopoweron  autopoweroff
+		if (includePowerOff) {
+			Alarm autoPoweroffAlarm = getAutoPoweroffAlarm(context);
+			if (autoPoweroffAlarm != null) {
+				alarms.add(autoPoweroffAlarm);
+			}
+		}
+        
+		if (includePowerOn) {
+			Alarm autoPoweronAlarm = getAutoPowerOnAlarm(context);
+			if (autoPoweronAlarm != null) {
+				// if have a same alarm that set to same time,then not add
+				boolean haveSameAlarm = false;
+				for (Alarm a : alarms) {
+					// A time of 0 indicates this is a repeating alarm, so
+					// calculate the time to get the next alert.
+					if (a.time == 0) {
+						a.time = calculateAlarm(a);
+					}
+					autoPoweronAlarm.time = calculateAlarm(autoPoweronAlarm);
+					if (autoPoweronAlarm.time == a.time) {
+						haveSameAlarm = true;
+						break;
+					}
+				}
+				// Log.v("------------------>have same alarm?"+haveSameAlarm);
+				if (!haveSameAlarm) {
+					alarms.add(autoPoweronAlarm);
+				}
+
+			}
+		}
+        
+        Alarm alarm = null;
+
+        //find the most close alarms
+        for (Alarm a : alarms) {
+            // A time of 0 indicates this is a repeating alarm, so
+            // calculate the time to get the next alert.
+            if (a.time == 0) {
+                a.time = calculateAlarm(a);
+            }
+
+            // Update the alarm if it has been snoozed
+            updateAlarmTimeForSnooze(prefs, a);
+
+            if (a.time < now) {
+                Log.v("Disabling expired alarm set for " + Log.formatTime(a.time));
+                // Expired alarm, disable it and move along.
+                enableAlarmInternal(context, a, false);
+                continue;
+            }
+            if (a.time < minTime) {
+                minTime = a.time;
+                alarm = a;
+            }
+        }
+        
         return alarm;
     }
 
@@ -406,7 +609,53 @@ public class Alarms {
     public static void setNextAlert(final Context context) {
         final Alarm alarm = calculateNextAlert(context);
         if (alarm != null) {
-            enableAlert(context, alarm, alarm.time);
+        	if(alarm.type==Alarm.ALARM_TYPE_NORMAL){
+        		enableAlert(context, alarm, alarm.time);
+        		enablePowerOffAlert(context, alarm.id, alarm.label, alarm.time);
+        	}else if(alarm.type==Alarm.ALARM_TYPE_POWEROFF){
+        		clearSnoozeIfNeeded(context, alarm.time);
+        		enableAlertNotSetIcon(context, alarm, alarm.time);
+        		setStatusBarIcon(context, false);
+        		saveNextAlarmInString(context, "");// 20110411
+        		
+        		
+        		Alarm nextNormal =calculateNextAlert(context,true,false);
+        		if(nextNormal!=null){
+        			enablePowerOffAlert(context, nextNormal.id, nextNormal.label, nextNormal.time);
+        			if(nextNormal.type==Alarm.ALARM_TYPE_NORMAL){
+        				setStatusBarIcon(context, true);
+						Calendar c = Calendar.getInstance();
+        				c.setTimeInMillis(nextNormal.time);
+        				String timeString = formatDayAndTime(context, c);
+        				saveNextAlarmInString(context, timeString);
+        			}else if(nextNormal.type==Alarm.ALARM_TYPE_POWERON){
+        				Alarm nextAfterNextAlarm =calculateNextAlert(context,false,false);
+        				if(nextAfterNextAlarm!=null){
+        					setStatusBarIcon(context, true);
+        				}
+        			}
+        		}
+        	}else if(alarm.type==Alarm.ALARM_TYPE_POWERON){
+        		long now = System.currentTimeMillis();
+        		alarm.time = calculateAlarm(alarm);
+            	if (alarm.time < now) {
+            		return;
+                }
+        		disableAlert(context);//close other poweroff alert
+        		
+        		
+        		Alarm nextNormal =calculateNextAlert(context,false,true);
+        		if(nextNormal!=null){
+        			enableAlertNotSetIcon(context, nextNormal, nextNormal.time);
+        		}
+        		enablePowerOffAlert(context, alarm.id, alarm.label, alarm.time);
+        		//decide show statusBarIcon yes or not because disableAlert make statsubarIcon none
+        		if(alarm.hasNextAlarm){
+        			setStatusBarIcon(context, true);
+        		}else{
+        			setStatusBarIcon(context, false);
+        		}
+        	}
         } else {
             disableAlert(context);
         }
@@ -421,30 +670,62 @@ public class Alarms {
      * @param alarm Alarm.
      * @param atTimeInMillis milliseconds since epoch
      */
-    private static void enableAlert(Context context, final Alarm alarm,
-            final long atTimeInMillis) {
-        AlarmManager am = (AlarmManager)
-                context.getSystemService(Context.ALARM_SERVICE);
+	private static void enableAlertNotSetIcon(Context context, final Alarm alarm,
+			final long atTimeInMillis) {
+		AlarmManager am = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		Intent intent = new Intent(ALARM_ALERT_ACTION);
+		
+		// XXX: This is a slight hack to avoid an exception in the remote
+		// AlarmManagerService process. The AlarmManager adds extra data to
+		// this Intent which causes it to inflate. Since the remote process
+		// does not know about the Alarm class, it throws a
+		// ClassNotFoundException.
+		//
+		// To avoid this, we marshall the data ourselves and then parcel a plain
+		// byte[] array. The AlarmReceiver class knows to build the Alarm
+		// object from the byte[] array.
+		Parcel out = Parcel.obtain();
+		alarm.writeToParcel(out, 0);
+		out.setDataPosition(0);
+		intent.putExtra(ALARM_RAW_DATA, out.marshall());
 
-        // Intentionally verbose: always log the alarm time to provide useful
-        // information in bug reports.
-        Log.v("Alarm set for id=" + alarm.id + " " + Log.formatTime(atTimeInMillis));
+		PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent,
+				PendingIntent.FLAG_CANCEL_CURRENT);
+		am.set(AlarmManager.RTC_WAKEUP, atTimeInMillis, sender);
 
-        Intent intent = new Intent(ALARM_ALERT_ACTION);
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(atTimeInMillis);
+        String timeString = formatDayAndTime(context, c);
+        saveNextAlarmInString(context, timeString);
+	}
 
-        // XXX: This is a slight hack to avoid an exception in the remote
-        // AlarmManagerService process. The AlarmManager adds extra data to
-        // this Intent which causes it to inflate. Since the remote process
-        // does not know about the Alarm class, it throws a
-        // ClassNotFoundException.
-        //
-        // To avoid this, we marshall the data ourselves and then parcel a plain
-        // byte[] array. The AlarmReceiver class knows to build the Alarm
-        // object from the byte[] array.
-        Parcel out = Parcel.obtain();
-        alarm.writeToParcel(out, 0);
-        out.setDataPosition(0);
-        intent.putExtra(ALARM_RAW_DATA, out.marshall());
+    /**
+     * Sets alert in AlarmManger and StatusBar.  This is what will
+     * actually launch the alert when the alarm triggers.
+     *
+     * @param alarm Alarm.
+     * @param atTimeInMillis milliseconds since epoch
+     */
+	private static void enableAlert(Context context, final Alarm alarm,
+			final long atTimeInMillis) {
+		AlarmManager am = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		Intent intent = new Intent(ALARM_ALERT_ACTION);
+		
+		// XXX: This is a slight hack to avoid an exception in the remote
+		// AlarmManagerService process. The AlarmManager adds extra data to
+		// this Intent which causes it to inflate. Since the remote process
+		// does not know about the Alarm class, it throws a
+		// ClassNotFoundException.
+		//
+		// To avoid this, we marshall the data ourselves and then parcel a plain
+		// byte[] array. The AlarmReceiver class knows to build the Alarm
+		// object from the byte[] array.
+		Parcel out = Parcel.obtain();
+		alarm.writeToParcel(out, 0);
+		out.setDataPosition(0);
+		intent.putExtra(ALARM_RAW_DATA, out.marshall());
 
         PendingIntent sender = PendingIntent.getBroadcast(
                 context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -456,8 +737,8 @@ public class Alarms {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(atTimeInMillis);
         String timeString = formatDayAndTime(context, c);
-        saveNextAlarm(context, timeString);
-    }
+        saveNextAlarmInString(context, timeString);
+	}
 
     /**
      * Disables alert in AlarmManager and StatusBar.
@@ -472,10 +753,24 @@ public class Alarms {
                 PendingIntent.FLAG_CANCEL_CURRENT);
         am.cancel(sender);
         setStatusBarIcon(context, false);
-        // Intentionally verbose: always log the lack of a next alarm to provide useful
-        // information in bug reports.
-        Log.v("No next alarm");
-        saveNextAlarm(context, "");
+        saveNextAlarmInString(context, "");
+        
+         // disable power off alarm
+        enablePowerOffAlert(context, -1, null, 0);
+    }
+    
+    /**
+     * Disables auto_off alert in AlarmManger 
+     */
+    static void disableAutoOffAlert(Context context) {
+		if (Log.LOGV)
+			Log.v("Alarms.disableAutoOffAlert");
+        AlarmManager am = (AlarmManager)
+                context.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent sender = PendingIntent.getBroadcast(
+                context, 1, new Intent(ALARM_ALERT_ACTION),
+                PendingIntent.FLAG_CANCEL_CURRENT);
+        am.cancel(sender);
     }
 
     static void saveSnoozeAlert(final Context context, final int id,
@@ -518,7 +813,7 @@ public class Alarms {
     // Helper to remove the snooze preference. Do not use clear because that
     // will erase the clock preferences. Also clear the snooze notification in
     // the window shade.
-    private static void clearSnoozePreference(final Context context,
+    public static void clearSnoozePreference(final Context context,
             final SharedPreferences prefs, final int id) {
         final String alarmStr = Integer.toString(id);
         final Set<String> snoozedIds =
@@ -646,7 +941,7 @@ public class Alarms {
      * Save time of the next alarm, as a formatted string, into the system
      * settings so those who care can make use of it.
      */
-    static void saveNextAlarm(final Context context, String timeString) {
+    static void saveNextAlarmInString(final Context context, String timeString) {
         Settings.System.putString(context.getContentResolver(),
                                   Settings.System.NEXT_ALARM_FORMATTED,
                                   timeString);
@@ -658,4 +953,148 @@ public class Alarms {
     public static boolean get24HourMode(final Context context) {
         return android.text.format.DateFormat.is24HourFormat(context);
     }
+    
+    
+    // =================================================================
+	// Following code add by 
+	// =================================================================
+	
+	private static Alarm getAutoPowerOnAlarm(Context context){
+		if (1 != Settings.System.getInt(context.getContentResolver(),AUTO_ON_FLAG, 0)) {
+			return null;
+		}
+		
+		int hour = Settings.System.getInt(context.getContentResolver(),	AUTO_ON_HOUR, 7);
+		int minute = Settings.System.getInt(context.getContentResolver(),AUTO_ON_MINUTE, 0);
+		Alarm resultAlarm =new Alarm(AUTO_ON_ALARM_ID, hour, minute, Alarm.ALARM_TYPE_POWERON);
+		resultAlarm.daysOfWeek=new DaysOfWeek(127);
+		
+		return resultAlarm;
+		
+	}
+	
+	
+	private static Alarm  getAutoPoweroffAlarm(Context context){
+		
+		if (1 != Settings.System.getInt(context.getContentResolver(),AUTO_OFF_FLAG, 0)) {
+			return null;
+		}
+		
+		int hour = Settings.System.getInt(context.getContentResolver(),
+				AUTO_OFF_HOUR, 23);
+		int minute = Settings.System.getInt(context.getContentResolver(),
+				AUTO_OFF_MINUTE, 0);
+		
+		Alarm  resultAlarm =new Alarm(AUTO_OFF_ALARM_ID,hour,minute,Alarm.ALARM_TYPE_POWEROFF);
+		return resultAlarm;
+	}
+	
+
+	/**
+	 * Set power off alarm
+	 * 
+	 * @usage call enablePowerOffAlert(context, -1, null, 0) to cancel power off
+	 *        alarm
+	 */
+	private static void enablePowerOffAlert(Context context, int id,
+			String label, long atTimeInMillis) {
+		// id = 0 auto-on;
+		// id > 0 power-off alarm
+		// save power-off alarm id, label, time to file
+		savePowerOffAlarmSetting(context, id, atTimeInMillis, label);
+        Log.v("id = " + id + "atTimeInMillis = " + atTimeInMillis);
+
+		AlarmManager am = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		 //am.set(AlarmManager.RTC_POWEROFF_WAKEUP, atTimeInMillis, null);
+		am.set(PlatformConfig.RTC_POWEROFF_WAKEUP, atTimeInMillis, null);
+
+	}
+
+	/**
+	 * Save power off alarm to file
+	 */
+	private static void savePowerOffAlarmSetting(Context context, int id,
+			long atTimeInMillis, String label) {
+		SharedPreferences prefs = context.getSharedPreferences(
+				AlarmClock.PREFERENCES, 0);
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putInt(PREF_POWER_OFF_ALARM_ID, id);
+		ed.putLong(PREF_POWER_OFF_ALARM_TIME, atTimeInMillis);
+		ed.putString(PREF_POWER_OFF_ALARM_LABEL, label);
+		ed.commit();
+		if (Log.LOGV)
+			Log.v("Alarms.savePowerOffAlarmSetting____power-off alarm index:"
+					+ id + "  time:" + Log.formatTime(atTimeInMillis));
+	}
+
+	/**
+	 * Set or cancel power auto off
+	 * 
+	 * @param on: true - set auto off; false - cancel auto off
+	 */
+	public static void setAutoPowerOff(Context context, boolean on) {
+		SharedPreferences prefs = context.getSharedPreferences(
+				AlarmClock.PREFERENCES, 0);
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putBoolean(Alarms.PREF_AUTO_OFF_FALG, on);
+		ed.commit();
+		if (Log.LOGV)
+			Log.v("Alarms.setAutoPowerOff____power-off flag=" + on);
+		setNextAlert(context);
+	}
+
+	/**
+	 * Set or cancel power auto on
+	 * 
+	 * @param on
+	 *            > true : Set auto on; false : Cancel auto on.
+	 */
+	public static void setAutoPowerOn(Context context, boolean on) {
+		SharedPreferences prefs = context.getSharedPreferences(
+				AlarmClock.PREFERENCES, 0);
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putBoolean(Alarms.PREF_AUTO_ON_FALG, on);
+		ed.commit();
+		if (Log.LOGV)
+			Log.v("Alarms.setAutoPowerOn____power-on flag=" + on);
+		setNextAlert(context);
+	}
+
+	/**
+	 * Implement power off function, delay 8 seconds
+	 */
+	public static void poweroff(Context context) {
+		context.sendBroadcast(new Intent(ACTION_POWER_OFF));
+	}
+
+	/**
+	 * Implement power off function immediately.
+	 */
+	public static void poweroffImme(Context context) {
+		context.sendBroadcast(new Intent(ACTION_POWER_OFF_AT_ONCE));
+	}
+	
+	/**
+	 * Whether or not phone is busy
+	 */
+
+	public static boolean isPhoneBusy(Context context) {
+
+         	if(TelephonyManager.getDefault().isMultiSimEnabled()){
+                if((MSimTelephonyManager.getDefault().getCallState(0)==TelephonyManager.CALL_STATE_IDLE) 
+                    && (MSimTelephonyManager.getDefault().getCallState(1)==TelephonyManager.CALL_STATE_IDLE)){
+                    return false;
+                }else{
+                    return true;
+                }
+			}else{
+                int callState = TelephonyManager.getDefault().getCallState();
+                if (callState == TelephonyManager.CALL_STATE_IDLE ){
+					return false;
+				}else{
+					return true;
+				}
+            }
+	}    
 }
