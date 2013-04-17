@@ -33,7 +33,7 @@
     <item msgid="2276489800209768303">"弗里敦"</item>
     <item msgid="1240576997711861023">"哈博罗内"</item>
     <item msgid="5349334209171364385">"哈拉雷"</item>
-    <item msgid="6113191477690557327">"约翰内斯堡"</item>
+    <item msgid="6113191477690557327">"约翰尼斯堡"</item>
     <item msgid="927428576674822400">"坎帕拉"</item>
     <item msgid="4026832076115235469">"哈土穆"</item>
     <item msgid="5410782788724286381">"基加利"</item>
@@ -64,14 +64,14 @@
     <item msgid="4753714764113170675">"丹佛"</item>
     <item msgid="2279315094917045244">"底特律"</item>
     <item msgid="1330228105893462956">"多米尼加"</item>
-    <item msgid="3303245425281858320">"埃德蒙顿"</item>
+    <item msgid="3303245425281858320">"艾德蒙顿"</item>
     <item msgid="6102675683216802960">"萨尔瓦多"</item>
     <item msgid="7404823948632138334">"福塔雷萨"</item>
     <item msgid="5295234178172153733">"大特克斯岛"</item>
     <item msgid="3015155377774814857">"格林纳达"</item>
     <item msgid="5124228611616346914">"危地马拉"</item>
     <item msgid="890870630819396468">"圭亚那"</item>
-    <item msgid="7195964234494402331">"哈利法克斯"</item>
+    <item msgid="7195964234494402331">"哈里法克斯"</item>
     <item msgid="4983877234758737190">"哈瓦那"</item>
     <item msgid="2738888001225341531">"印第安纳波利斯"</item>
     <item msgid="5335614190119698790">"诺克斯"</item>
@@ -92,7 +92,7 @@
     <item msgid="8264013691437690644">"梅特拉卡特拉"</item>
     <item msgid="3242307788223843671">"墨西哥城"</item>
     <item msgid="3904210242491724008">"蒙特雷"</item>
-    <item msgid="2049700402307558992">"蒙得维的亚"</item>
+    <item msgid="2049700402307558992">"蒙特维的亚"</item>
     <item msgid="6972371385309297826">"蒙特利尔"</item>
     <item msgid="1121150121639680484">"拿骚"</item>
     <item msgid="8783518093470040300">"纽约"</item>
@@ -104,7 +104,7 @@
     <item msgid="6678389014419621494">"西班牙港"</item>
     <item msgid="5255184875289196899">"太子港"</item>
     <item msgid="7039428977566254389">"波多黎各"</item>
-    <item msgid="1577859671465557300">"圣多明戈"</item>
+    <item msgid="1577859671465557300">"圣多明各"</item>
     <item msgid="3956700126827381905">"圣保罗"</item>
     <item msgid="3851056559336304908">"圣约翰"</item>
     <item msgid="7620601490016157459">"圣基茨"</item>
@@ -133,7 +133,6 @@
     <item msgid="138195076135095830">"希伯伦"</item>
     <item msgid="2792857260329757927">"胡志明市"</item>
     <item msgid="2753915200056183217">"香港"</item>
-    <item msgid="6375713877627922624">"伊斯坦布尔"</item>
     <item msgid="164857852656167029">"雅加达"</item>
     <item msgid="514551483895638508">"耶路撒冷"</item>
     <item msgid="7852405794661778785">"喀布尔"</item>
@@ -169,7 +168,7 @@
     <item msgid="7369443573793537977">"达尔文"</item>
     <item msgid="6038622967693853356">"墨尔本"</item>
     <item msgid="5987600941235656656">"新南威尔士"</item>
-    <item msgid="8993222367897103441">"珀斯"</item>
+    <item msgid="8993222367897103441">"珮斯"</item>
     <item msgid="2331172541371685437">"昆士兰"</item>
     <item msgid="2150912736505182699">"悉尼"</item>
     <item msgid="8097029759143077179">"维多利亚"</item>
@@ -218,7 +217,7 @@
     <item msgid="8251863344440905549">"维也纳"</item>
     <item msgid="3257947331297603891">"维尔纽斯"</item>
     <item msgid="2305299694079344212">"华沙"</item>
-    <item msgid="4469591142000997702">"萨格勒布"</item>
+    <item msgid="4469591142000997702">"萨格雷布"</item>
     <item msgid="3827805692447432666">"苏黎世"</item>
     <item msgid="7710293346890852314">"安塔那利佛"</item>
     <item msgid="8675463358261691187">"马尔代夫"</item>
@@ -240,7 +239,7 @@
     <item msgid="4015131634823666245">"诺克斯维尔"</item>
     <item msgid="3978413466663710403">"孟菲斯"</item>
     <item msgid="5023838008354228529">"迈阿密"</item>
-    <item msgid="7182213480667543511">"明尼阿波里斯"</item>
+    <item msgid="7182213480667543511">"明尼亚波利斯"</item>
     <item msgid="869023139270244552">"渥太华"</item>
     <item msgid="8138869957811168440">"费城"</item>
     <item msgid="1752278495028380978">"波特兰"</item>
@@ -298,6 +297,51 @@
     <item msgid="3567009426051313507">"广州"</item>
     <item msgid="2738289235744819761">"海得拉巴"</item>
     <item msgid="35629823970779893">"雷斯顿"</item>
+    <item>"马朱罗"</item>
+    <item>"中途岛"</item>
+    <item>"提华纳"</item>
+    <item>"凤凰城"</item>
+    <item>"里贾纳"</item>
+    <item>"马瑙斯"</item>
+    <item>"圣地亚哥"</item>
+    <item>"阿拉瓜伊纳"</item>
+    <item>"戈特霍布"</item>
+    <item>"南乔治亚"</item>
+    <item>"亚述尔群岛"</item>
+    <item>"温得和克"</item>
+    <item>"布拉扎维"</item>
+    <item>"内罗毕"</item>
+    <item>"第比利斯"</item>
+    <item>"埃里温"</item>
+    <item>"乌拉尔"</item>
+    <item>"叶卡捷琳堡"</item>
+    <item>"科伦坡"</item>
+    <item>"克拉斯诺亚尔斯克"</item>
+    <item>"伊尔库兹克"</item>
+    <item>"雅库兹克"</item>
+    <item>"霍巴特"</item>
+    <item>"马加丹"</item>
+    <item>"东加塔布"</item>
+    <item>"阿克拉维克"</item>
+    <item>"蒙哥马利"</item>
+    <item>"特古西加尔巴"</item>
+    <item>"华盛顿哥伦比亚特区"</item>
+    <item>"拉帕兹"</item>
+    <item>"圣胡安"</item>
+    <item>"圣约翰斯"</item>
+    <item>"日内瓦"</item>
+    <item>"敖德萨"</item>
+    <item>"喀土穆"</item>
+    <item>"亚丁"</item>
+    <item>"阿布扎比"</item>
+    <item>"塔什干"</item>
+    <item>"新德里"</item>
+    <item>"柯尔喀塔"</item>
+    <item>"苏瓦"</item>
+    <item>"惠灵顿"</item>
+    <item>"查塔姆群岛"</item>
+    <item>"奇瓦瓦"</item>
+    <item>"符拉迪沃斯托克"</item>
   </string-array>
   
   <string-array name="alarm_repeat_entries">
