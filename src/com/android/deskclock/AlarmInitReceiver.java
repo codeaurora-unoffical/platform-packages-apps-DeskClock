@@ -42,7 +42,7 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 
     // A flag that indicates that switching the volume button default was done
     private static final String PREF_VOLUME_DEF_DONE = "vol_def_done";
-	private static final int ALARM_THRESHOLD = 2*60*1000; // 2min
+	private static final int ALARM_THRESHOLD = 50*1000; // 50s
 
     /**
      * Sets alarm on ACTION_BOOT_COMPLETED.  Resets alarm on
@@ -86,7 +86,7 @@ public class AlarmInitReceiver extends BroadcastReceiver {
         			if (reason == true) {
         				 // Fire power-off alarm, and return to avoid to call
 						     // setNextAlert() agai
-        				 if (savedAlarmId > 0&&now - savedAlarmTime <=ALARM_THRESHOLD){
+        				 if ((savedAlarmId > 0)&&(now >= savedAlarmTime)&&(now - savedAlarmTime <=ALARM_THRESHOLD)){
                              Log.v("alarm  startActivityHelper !!!!!! " );
 
                              startActivityHelper(context, savedAlarmId);
@@ -140,7 +140,6 @@ public class AlarmInitReceiver extends BroadcastReceiver {
         editor.apply();
     }
 	private static void startActivityHelper(Context context, int poAlarmId) {
-        Log.v("alarm  startActivityHelper  in    !!!!!! " );
 
 		ContentResolver contentResolver = context.getContentResolver();
 		final Alarm poAlarm = Alarms.getAlarm(contentResolver, poAlarmId);
@@ -160,7 +159,6 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 		if (km.inKeyguardRestrictedInputMode()) {
 			// Use the full screen activity for security.
 			c = AlarmAlertFullScreen.class;
-            Log.v("alarm  startActivityHelper  c = AlarmAlertFullScreen.class    !!!!!! " );
 		}
 
 		// launch UI, explicitly stating that this is not due to user action
@@ -171,8 +169,6 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 		alarmAlert.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
 				| Intent.FLAG_ACTIVITY_NO_USER_ACTION);
 		context.startActivity(alarmAlert);
-        Log.v("alarm  startActivityHelper  startActivity    !!!!!! " );
-
 
 		// Disable all the expired or snoozed alarm.
 		Alarms.disableExpiredAlarms(context);
