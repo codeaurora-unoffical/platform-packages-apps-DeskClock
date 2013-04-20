@@ -153,6 +153,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         // launched from a user action.
         Intent notify = new Intent(context, AlarmAlertFullScreen.class);
         notify.putExtra(Alarms.ALARM_INTENT_EXTRA, alarm);
+        notify.setFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
         PendingIntent pendingNotify = PendingIntent.getActivity(context,
                 alarm.id, notify, 0);
 
