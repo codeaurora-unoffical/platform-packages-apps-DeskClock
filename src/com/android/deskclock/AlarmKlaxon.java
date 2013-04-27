@@ -69,7 +69,8 @@ public class AlarmKlaxon extends Service {
                     if (Log.LOGV) {
                         Log.v("*********** Alarm killer triggered ***********");
                     }
-                    sendKillBroadcast((Alarm) msg.obj, false);
+                    //sendKillBroadcast((Alarm) msg.obj, false);
+                    sendSnoozeBroadcast();
                     stopSelf();
                     // If powe on due to alarm, and no user operation, implement to power off after 2 minutes.
                     if (mPoweroffAlarm) {
@@ -165,6 +166,10 @@ public class AlarmKlaxon extends Service {
         alarmKilled.putExtra(Alarms.ALARM_KILLED_TIMEOUT, minutes);
         alarmKilled.putExtra(Alarms.ALARM_REPLACED, replaced);
         sendBroadcast(alarmKilled);
+    }
+    private void sendSnoozeBroadcast() {
+        Intent alarmSnooze = new Intent(Alarms.ALARM_SNOOZE_ACTION);
+        sendBroadcast(alarmSnooze);
     }
 
     // Volume suggested by media team for in-call alarms.
