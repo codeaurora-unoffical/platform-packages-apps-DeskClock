@@ -47,7 +47,8 @@ public class AlarmKlaxon extends Service {
     // Default of 10 minutes until alarm is silenced.
     private static final String DEFAULT_ALARM_TIMEOUT = "10";
 
-    private static final long[] sVibratePattern = new long[] { 500, 500 };
+    private static final long[] sVibratePattern1 = new long[] { 500,300,500,350,500,400,500,450};
+    private static final long[] sVibratePattern = new long[] { 500,500};
 
     private boolean mPlaying = false;
     private Vibrator mVibrator;
@@ -58,9 +59,14 @@ public class AlarmKlaxon extends Service {
     private int mInitialCallState;
 
     private boolean mPoweroffAlarm = false;
-	
+	private int mVolme = 0;
+    private int Count = 0;
+    private int mCurrentVolme = 0;
     // Internal messages
     private static final int KILLER = 1000;
+    private static final int VOLUM_DELAY = 1001;
+    private static final int VIBRATE_DELAY = 1002;
+    AudioManager mAudioManager;
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -78,6 +84,29 @@ public class AlarmKlaxon extends Service {
                         Alarms.poweroffImme(AlarmKlaxon.this);
                     }
                     break;
+                case VOLUM_DELAY:
+                    
+                    if(mMediaPlayer!=null){
+                        if(Count < mVolme){
+                        mCurrentVolme = mCurrentVolme + 1;
+                        mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mCurrentVolme,0);
+                        Count++;
+                        mHandler.sendMessageDelayed(mHandler.obtainMessage(VOLUM_DELAY,mVolme),
+                          2000);
+                        }else{
+                          mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mVolme,0);
+						  break;
+                        }
+                    }else{
+                        mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mVolme,0);
+					    break;
+                    }
+                    break;
+               case VIBRATE_DELAY:
+                    mVibrator.cancel();
+                    mVibrator.vibrate(sVibratePattern, 0);
+                     
+                    
             }
         }
     };
@@ -100,6 +129,7 @@ public class AlarmKlaxon extends Service {
     @Override
     public void onCreate() {
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+         mAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         // Listen for incoming calls to kill the alarm.
         mTelephonyManager =
                 (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -243,7 +273,10 @@ public class AlarmKlaxon extends Service {
 
         /* Start the vibrator after everything is ok with the media player */
         if (alarm.vibrate) {
-            mVibrator.vibrate(sVibratePattern, 0);
+            mVibrator.vibrate(sVibratePattern1, 1);
+            mHandler.sendMessageDelayed(mHandler.obtainMessage(VIBRATE_DELAY),
+                          3450);
+            
         } else {
             mVibrator.cancel();
         }
@@ -261,13 +294,19 @@ public class AlarmKlaxon extends Service {
         // do not play alarms if stream volume is 0
         // (typically because ringer mode is silent).
         if (audioManager.getStreamVolume(AudioManager.STREAM_ALARM) != 0) {
+            startVolume(audioManager.getStreamVolume(AudioManager.STREAM_ALARM));
             player.setAudioStreamType(AudioManager.STREAM_ALARM);
             player.setLooping(true);
             player.prepare();
             player.start();
+            
         }
     }
-
+    private void startVolume(int i){
+        mVolme = i; 
+        mHandler.sendMessageDelayed(mHandler.obtainMessage(VOLUM_DELAY, i),
+                          100);
+    }
     private void setDataSourceFromResource(Resources resources,
             MediaPlayer player, int res) throws java.io.IOException {
         AssetFileDescriptor afd = resources.openRawResourceFd(res);
@@ -284,16 +323,22 @@ public class AlarmKlaxon extends Service {
      */
     public void stop() {
         if (Log.LOGV) Log.v("AlarmKlaxon.stop()");
+        if(mHandler.hasMessages(VIBRATE_DELAY)){
+            mHandler.removeMessages(VIBRATE_DELAY);
+		}
+		if(mHandler.hasMessages(VOLUM_DELAY)){
+            mHandler.removeMessages(VOLUM_DELAY);
+		}
         if (mPlaying) {
             mPlaying = false;
 
             // Stop audio playing
             if (mMediaPlayer != null) {
+                mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mVolme,0);
                 mMediaPlayer.stop();
                 mMediaPlayer.release();
                 mMediaPlayer = null;
             }
-
             // Stop vibrator
             mVibrator.cancel();
         }
