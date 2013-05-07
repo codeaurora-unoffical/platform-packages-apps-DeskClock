@@ -60,8 +60,9 @@ public class ZeroTopPaddingTextView extends TextView {
         }
         // no need to scale by display density because getTextSize() already returns the font
         // height in px
-        setPadding(0, (int) (-paddingRatio * getTextSize()), mPaddingRight,
-                (int) (-bottomPaddingRatio * getTextSize()));
+        setPadding(0, (int) (-paddingRatio * getTextSize())+5, mPaddingRight,
+                //(int) (-bottomPaddingRatio * getTextSize())+5);
+                0);
     }
 
     public void setPaddingRight(int padding) {
