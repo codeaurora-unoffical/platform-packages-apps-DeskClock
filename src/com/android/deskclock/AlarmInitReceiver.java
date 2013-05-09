@@ -42,7 +42,7 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 
     // A flag that indicates that switching the volume button default was done
     private static final String PREF_VOLUME_DEF_DONE = "vol_def_done";
-	private static final int ALARM_THRESHOLD = 50*1000; // 50s
+	private static final int ALARM_THRESHOLD = 70*1000; // 70s
 
     /**
      * Sets alarm on ACTION_BOOT_COMPLETED.  Resets alarm on
