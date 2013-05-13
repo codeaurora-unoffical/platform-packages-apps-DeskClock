@@ -85,10 +85,11 @@ public class AlarmKlaxon extends Service {
                     }
                     break;
                 case VOLUM_DELAY:
-                    
+                    Log.v("VOLUM_DELAY,Count = " + Count);
                     if(mMediaPlayer!=null){
                         if(Count < mVolme){
                         mCurrentVolme = mCurrentVolme + 1;
+                        Log.v("VOLUM_DELAY,mCurrentVolme = " + mCurrentVolme);
                         mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mCurrentVolme,0);
                         Count++;
                         mHandler.sendMessageDelayed(mHandler.obtainMessage(VOLUM_DELAY,mVolme),
@@ -304,8 +305,10 @@ public class AlarmKlaxon extends Service {
     }
     private void startVolume(int i){
         mVolme = i; 
-        mHandler.sendMessageDelayed(mHandler.obtainMessage(VOLUM_DELAY, i),
-                          100);
+        
+        Log.v("startVolume,i = " + i);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_ALARM,mCurrentVolme,0);
+        mHandler.sendMessageDelayed(mHandler.obtainMessage(VOLUM_DELAY, i),10);
     }
     private void setDataSourceFromResource(Resources resources,
             MediaPlayer player, int res) throws java.io.IOException {
