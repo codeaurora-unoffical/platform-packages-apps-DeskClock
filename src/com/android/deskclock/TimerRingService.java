@@ -134,6 +134,7 @@ public class TimerRingService extends Service {
                 AssetFileDescriptor afd = getAssets().openFd("sounds/Timer_Expire.ogg");
                 mMediaPlayer.setDataSource(
                         afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                afd.close();
             }
             startAlarm(mMediaPlayer);
         } catch (Exception ex) {
