@@ -66,7 +66,7 @@ public class SettingsActivity extends PreferenceActivity
 
     public static final String DEFAULT_VOLUME_BEHAVIOR = "0";
 
-    private static CharSequence[][] mTimezones;
+    private CharSequence[][] mTimezones;
     private long mTime;
 
 
