@@ -152,6 +152,12 @@ public class DeskClock extends Activity implements LabelDialogFragment.TimerLabe
         }
         initViews();
         setHomeTimeZone();
+
+        // This method is used to update the info of next alarm. We need to call
+        // this method every time when this app launches to update next alarm
+        // info, since anything may modify the database outside.
+        Alarms.setNextAlert(this);
+
     }
 
     @Override
