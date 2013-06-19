@@ -116,9 +116,6 @@ public class Alarms {
         alarm.id = (int) ContentUris.parseId(uri);
 
         long timeInMillis = calculateAlarm(alarm);
-        if (alarm.enabled) {
-            clearSnoozeIfNeeded(context, timeInMillis);
-        }
         setNextAlert(context);
         return timeInMillis;
     }
@@ -254,10 +251,6 @@ public class Alarms {
             // TODO: disableSnoozeAlert should have a better name.
             disableSnoozeAlert(context, alarm.id);
 
-            // Disable the snooze if this alarm fires before the snoozed alarm.
-            // This works on every alarm since the user most likely intends to
-            // have the modified alarm fire next.
-            clearSnoozeIfNeeded(context, timeInMillis);
         }
 
         setNextAlert(context);
