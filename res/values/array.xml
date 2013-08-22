@@ -131,7 +131,6 @@
         <item>Hebron</item>
         <item>Ho Chi Minh</item>
         <item>Hong Kong</item>
-        <item>Istanbul</item>
         <item>Jakarta</item>
         <item>Jerusalem</item>
         <item>Kabul</item>
@@ -296,6 +295,51 @@
         <item>Guangzhou</item>
         <item>Hyderabad</item>
         <item>Reston</item>
+        <item>Marshall Islands</item>
+        <item>Midway Island</item>
+        <item>Tijuana</item>
+        <item>Phoenix</item>
+        <item>Regina</item>
+        <item>Manaus</item>
+        <item>Santiago</item>
+        <item>Araguaina</item>
+        <item>Godthab</item>
+        <item>South_Georgia</item>
+        <item>Azores</item>
+        <item>Windhoek</item>
+        <item>Brazzaville</item>
+        <item>Nairobi</item>
+        <item>Tbilisi</item>
+        <item>Yerevan</item>
+        <item>Oral</item>
+        <item>Yekaterinburg</item>
+        <item>Colombo</item>
+        <item>Krasnoyarsk</item>
+        <item>Irkutsk</item>
+        <item>Yakutsk</item>
+        <item>Hobart</item>
+        <item>Magadan</item>
+        <item>Tongatapu</item>
+        <item>Aklavik</item>
+        <item>Montgomery</item>
+        <item>Tegucigalpa</item>
+        <item>Washington_DC</item>
+        <item>La_Paz</item>
+        <item>San_Juan</item>
+        <item>St_Johns</item>
+        <item>Geneva</item>
+        <item>Odesa</item>
+        <item>Khartoum</item>
+        <item>Aden</item>
+        <item>Abu_Dhabi</item>
+        <item>Tashkent</item>
+        <item>New_Delhi</item>
+        <item>Calcutta</item>
+        <item>Suva</item>
+        <item>Wellington</item>
+        <item>Chatham</item>
+        <item>Chihuahua</item>
+        <item>Vladivostok</item>
     </string-array>
 
     <string-array name="cities_tz" translatable="false">
@@ -414,7 +458,6 @@
         <item>Asia/Hebron</item>
         <item>Asia/Ho_Chi_Minh</item>
         <item>Asia/Hong_Kong</item>
-        <item>Asia/Istanbul</item>
         <item>Asia/Jakarta</item>
         <item>Asia/Jerusalem</item>
         <item>Asia/Kabul</item>
@@ -579,6 +622,51 @@
         <item>Asia/Shanghai</item>
         <item>Asia/Kolkata</item>
         <item>America/New_York</item>
+        <item>Pacific/Majuro</item>
+        <item>Pacific/Midway</item>
+        <item>America/Tijuana</item>
+        <item>America/Phoenix</item>
+        <item>America/Regina</item>
+        <item>America/Manaus</item>
+        <item>America/Santiago</item>
+        <item>America/Araguaina</item>
+        <item>America/Godthab</item>
+        <item>Atlantic/South_Georgia</item>
+        <item>Atlantic/Azores</item>
+        <item>Africa/Windhoek</item>
+        <item>Africa/Brazzaville</item>
+        <item>Africa/Nairobi</item>
+        <item>Asia/Tbilisi</item>
+        <item>Asia/Yerevan</item>
+        <item>Asia/Oral</item>
+        <item>Asia/Yekaterinburg</item>
+        <item>Asia/Colombo</item>
+        <item>Asia/Krasnoyarsk</item>
+        <item>Asia/Irkutsk</item>
+        <item>Asia/Yakutsk</item>
+        <item>Australia/Hobart</item>
+        <item>Asia/Magadan</item>
+        <item>Pacific/Tongatapu</item>
+        <item>America/Aklavik</item>
+        <item>America/Montgomery</item>
+        <item>America/Tegucigalpa</item>
+        <item>America/Washington_DC</item>
+        <item>America/La_Paz</item>
+        <item>America/Argentina/San_Juan</item>
+        <item>America/St_Johns</item>
+        <item>Europe/Geneva</item>
+        <item>Europe/Odesa</item>
+        <item>Africa/Khartoum</item>
+        <item>Asia/Aden</item>
+        <item>Asia/Abu_Dhabi</item>
+        <item>Asia/Tashkent</item>
+        <item>Asia/New_Delhi</item>
+        <item>Asia/Calcutta</item>
+        <item>Pacific/Suva</item>
+        <item>Pacific/Wellington</item>
+        <item>Pacific/Chatham</item>
+        <item>America/Chihuahua</item>
+        <item>Asia/Vladivostok</item>
     </string-array>
 
     <string-array name="cities_id" translatable="false">
@@ -862,6 +950,50 @@
         <item>C278</item>
         <item>C279</item>
         <item>C280</item>
+        <item>C281</item>
+        <item>C282</item>
+        <item>C283</item>
+        <item>C284</item>
+        <item>C285</item>
+        <item>C286</item>
+        <item>C287</item>
+        <item>C288</item>
+        <item>C289</item>
+        <item>C290</item>
+        <item>C291</item>
+        <item>C292</item>
+        <item>C293</item>
+        <item>C294</item>
+        <item>C295</item>
+        <item>C296</item>
+        <item>C297</item>
+        <item>C298</item>
+        <item>C299</item>
+        <item>C300</item>
+        <item>C301</item>
+        <item>C302</item>
+        <item>C303</item>
+        <item>C304</item>
+        <item>C305</item>
+        <item>C306</item>
+        <item>C307</item>
+        <item>C308</item>
+        <item>C309</item>
+        <item>C310</item>
+        <item>C311</item>
+        <item>C312</item>
+        <item>C313</item>
+        <item>C314</item>
+        <item>C315</item>
+        <item>C316</item>
+        <item>C317</item>
+        <item>C318</item>
+        <item>C319</item>
+        <item>C320</item>
+        <item>C321</item>
+        <item>C322</item>
+        <item>C323</item>
+        <item>C324</item>
     </string-array>
 
     <array name="snooze_dismiss_drawables">
