@@ -81,6 +81,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
     private static final String KEY_DELETE_CONFIRMATION = "deleteConfirmation";
 
     private static final int REQUEST_CODE_RINGTONE = 1;
+    private static final int REQUEST_CODE_EXTERN_AUDIO = 2;
 
     private SwipeableListView mAlarmsList;
     private AlarmItemAdapter mAdapter;
@@ -89,6 +90,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
     private ActionMode mActionMode;
 
     private Alarm mSelectedAlarm;
+    private int mSelectSource = 0; // 0 : ringtone, 1 : external
     private int mScrollToAlarmId = -1;
     private boolean mInDeleteConfirmation = false;
 
@@ -358,23 +360,78 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
         mAdapter.swapCursor(null);
     }
 
+    private void sendPickIntent() {
+        Log.i("AlarmClock sel="+mSelectSource);
+        if(mSelectSource==0) {
+            final Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                AlarmClock.this.mSelectedAlarm.alert);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE,
+                RingtoneManager.TYPE_ALARM);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
+                false);
+            AlarmClock.this.startActivityForResult(intent, REQUEST_CODE_RINGTONE);
+        } else {
+            final Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                AlarmClock.this.mSelectedAlarm.alert);
+            intent.setType("audio/*");
+            AlarmClock.this.startActivityForResult(intent, REQUEST_CODE_EXTERN_AUDIO);
+        }
+        Log.i("AlarmClock will dismss");
+    }
+
+    private class RingTonePickerDialogListener implements DialogInterface.OnClickListener {
+        private AlarmClock alarm;
+
+        public RingTonePickerDialogListener(AlarmClock clock) {
+            alarm = clock;
+        }
+
+        public void onClick(DialogInterface dialog, int which) {
+            switch(which) {
+                case 0: // ringtone
+                case 1: // external music
+                    alarm.mSelectSource = which;
+                    break;
+                case DialogInterface.BUTTON_POSITIVE:
+                    alarm.sendPickIntent();
+                case DialogInterface.BUTTON_NEGATIVE:
+                default:
+                    dialog.dismiss();
+                    break;
+            }
+        }
+    }
+
     private void launchRingTonePicker(Alarm alarm) {
         mSelectedAlarm = alarm;
-        final Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm.alert);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM);
-        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false);
-        startActivityForResult(intent, REQUEST_CODE_RINGTONE);
+        RingTonePickerDialogListener listener = new RingTonePickerDialogListener(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getResources().getString(R.string.alarm_select));
+        builder.setSingleChoiceItems(
+                new String[] { getResources().getString(R.string.alarm_select_ringtone),
+                        getResources().getString(R.string.alarm_select_external) },
+                mSelectSource, listener);
+        builder.setPositiveButton(getResources().getString(R.string.alarm_select_ok),listener);
+        builder.setNegativeButton(getResources().getString(R.string.alarm_select_cancel),listener);
+        builder.show();
     }
 
     private void saveRingtoneUri(Intent intent) {
-        final Uri uri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+        Uri uri;
+        if ( 0 == mSelectSource )
+            uri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+        else
+            uri = intent.getData();
         mSelectedAlarm.alert = uri;
+        Log.i("AlarmClock will save "+uri);
         // Save the last selected ringtone as the default for new alarms
         if (uri != null) {
             RingtoneManager.setActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM, uri);
         }
         asyncUpdateAlarm(mSelectedAlarm, false);
+        Log.i("AlarmClock finish");
     }
 
     @Override
@@ -382,6 +439,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case REQUEST_CODE_RINGTONE:
+                case REQUEST_CODE_EXTERN_AUDIO:
                     saveRingtoneUri(data);
                     break;
                 default:
