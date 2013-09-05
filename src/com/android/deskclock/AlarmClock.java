@@ -179,15 +179,15 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
             mActionMode = startActionMode(this);
             setActionModeTitle(selectedNum);
         }
+        if (mInDeleteConfirmation) {
+            showConfirmationDialog();
+        }
 
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (mInDeleteConfirmation) {
-            showConfirmationDialog();
-        }
     }
     private void hideUndoBar(boolean animate, MotionEvent event) {
         if (mUndoBar != null) {
