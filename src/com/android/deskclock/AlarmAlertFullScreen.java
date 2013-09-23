@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -66,6 +67,7 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
     private static final long PING_AUTO_REPEAT_DELAY_MSEC = 1200;
 
     private boolean mPingEnabled = true;
+    private static final String ACTION_POWER_ON_ALERT = "android.app.action.POWER_ON_ALERT";
 
     // Receives the ALARM_KILLED action from the AlarmKlaxon,
     // and also ALARM_SNOOZE_ACTION / ALARM_DISMISS_ACTION from other applications
@@ -269,6 +271,12 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
             NotificationManager nm = getNotificationManager();
             nm.cancel(mAlarm.id);
             stopService(new Intent(Alarms.ALARM_ALERT_ACTION));
+
+            // If the alarm is power off alarm,To start a remainder dialog
+            // to remind user if power on or not
+            if(Alarms.isPowerOffAlarm(mAlarm)){
+                startPowerOnAlert();
+            }
         }
         if (!replaced) {
             finish();
@@ -414,5 +422,17 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
 
     @Override
     public void onFinishFinalAnimation() {
+    }
+
+    /**
+     * Start power on alert dialog,and reminder user if power on or not after
+     * pop up clock and slide right.
+     */
+    private void startPowerOnAlert() {
+        try {
+            startActivity(new Intent(ACTION_POWER_ON_ALERT));
+        } catch (ActivityNotFoundException ex) {
+            // do nothing, the powerOnAlert app couldn't be found.
+        }
     }
 }
