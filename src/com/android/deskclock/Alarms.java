@@ -32,6 +32,7 @@ import android.os.Parcel;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.provider.Settings;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 
@@ -111,7 +112,8 @@ public class Alarms {
     // If power on time to alarm time less than two minutes
     // is considered to be a power off alarm
     private static final int ALARM_THRESHOLD = 120 * 1000;
-    private static final String PROP_POWERON_ALERT = "persist.env.deskclock.poalert";
+    public static final String PROP_POWERON_ALERT = "persist.env.deskclock.poalert";
+    private static final String FIRST_ALARM_FLAG = "first_alarm";
 
     /**
      * Creates a new Alarm and fills in the given alarm's id.
@@ -674,17 +676,26 @@ public class Alarms {
     /**
      * @return true if the alarm is a power off alarm
      */
-    public static boolean isPowerOffAlarm(Alarm currentAlarm) {
+    public static boolean isPowerOffAlarm(Context context) {
         boolean isPoAlarm = false;
-        long now = System.currentTimeMillis();
-        long upTimeToNow = SystemClock.uptimeMillis();
-        long upTime = now - upTimeToNow;
+        SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(context);
 
         if (SystemProperties.getBoolean(PROP_POWERON_ALERT, false)) {
-            if (currentAlarm.time - upTime < ALARM_THRESHOLD){
+            if (prefs.getBoolean(Alarms.FIRST_ALARM_FLAG, false)){
                 isPoAlarm = true;
+                saveFirstAlarm(prefs,false);
             }
         }
         return isPoAlarm;
+    }
+
+    /**
+     * Save flag for first Alarm
+     */
+    public static void saveFirstAlarm(SharedPreferences prefs,Boolean isFirstAlarm) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(Alarms.FIRST_ALARM_FLAG,isFirstAlarm);
+        editor.apply();
     }
 }
