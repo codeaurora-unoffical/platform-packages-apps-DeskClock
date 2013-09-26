@@ -21,9 +21,14 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.text.format.DateFormat;
+import android.util.SparseBooleanArray;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,6 +38,7 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
@@ -45,7 +51,9 @@ import com.android.deskclock.Utils;
 
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.TimeZone;
 
@@ -64,6 +72,9 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
     private CityAdapter mAdapter;
     private HashMap<String, CityObj> mUserSelectedCities;
     private Calendar mCalendar;
+    private final Collator mCollator = Collator.getInstance();
+    private EditText mTextEditor;
+    private int selectedItems = 0;
 
 /***
 * Adapter for a list of cities with the respected time zone.
@@ -78,10 +89,13 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
         private boolean mIs24HoursMode;                            // AM/PM or 24 hours mode
         private Object [] mSectionHeaders;
         private Object [] mSectionPositions;
+        private ArrayList<CityObj> items = new ArrayList<CityObj>();
+        private Context mContext;
 
         public CityAdapter(
                 Context context,  HashMap<String, CityObj> selectedList, LayoutInflater factory) {
             super();
+            mContext = context;
             loadCitiesDataBase(context);
             mSelectedCitiesList = selectedList;
             mInflater = factory;
@@ -159,7 +173,7 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
             String val = null;
             ArrayList<String> sections = new ArrayList<String> ();
             ArrayList<Integer> positions = new ArrayList<Integer> ();
-            ArrayList<CityObj> items = new ArrayList<CityObj>();
+
             int count = 0;
             for (int i = 0; i < tempList.length; i++) {
                 CityObj city = tempList[i];
@@ -170,8 +184,9 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
                     val = city.mCityName.substring(0, 1);
                     sections.add((new String(val)).toUpperCase());
                     positions.add(count);
-                    // Add a header
-                    items.add(new CityObj(val, null, null));
+                    // Not adding a header for the international
+                    // languages' difference and the searching programme
+                    // items.add(new CityObj(val, null, null));
                     count++;
                 }
                 items.add(city);
@@ -207,6 +222,38 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
         public Object[] getSections() {
             return mSectionHeaders;
         }
+
+        public void loadSearchList(String filter) {
+            items.clear();
+            Resources r = mContext.getResources();
+            // Read strings array of name,timezone, id
+            // make sure the list are the same length
+            String[] cities = r.getStringArray(R.array.cities_names);
+            String[] timezones = r.getStringArray(R.array.cities_tz);
+            String[] ids = r.getStringArray(R.array.cities_id);
+            if (cities.length != timezones.length
+                    || ids.length != cities.length) {
+                Log.e("TAG",
+                    "City lists sizes are not the same, cannot use the data");
+                return;
+            }
+            CityObj[] tempList = new CityObj[cities.length];
+            for (int i = 0; i < cities.length; i++) {
+                tempList[i] = new CityObj(cities[i], timezones[i], ids[i]);
+            }
+            // Sort alphabetically
+            Arrays.sort(tempList, new Comparator<CityObj>() {
+                @Override
+                public int compare(CityObj c1, CityObj c2) {
+                    return mCollator.compare(c1.mCityName, c2.mCityName);
+                }
+            });
+            for (CityObj temp : tempList) {
+                if (temp.mCityName.toUpperCase().contains(filter))
+                    items.add(temp);
+            }
+            mAllTheCitiesList = items.toArray();
+        }
     }
 
 
@@ -231,6 +278,64 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
         if (actionBar != null) {
             actionBar.setDisplayOptions(ActionBar.DISPLAY_HOME_AS_UP, ActionBar.DISPLAY_HOME_AS_UP);
         }
+        // init search layout
+        mTextEditor = (EditText) findViewById(R.id.search_edit);
+        mTextEditor.addTextChangedListener(mTextEditorWatcher);
+        mTextEditor.setFocusable(true);
+    }
+
+    private final TextWatcher mTextEditorWatcher = new TextWatcher() {
+        ArrayList<String> tzId = new ArrayList<String>();
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // remember the selected item
+            CityObj item;
+            SparseBooleanArray array = mCitiesList.getCheckedItemPositions();
+            if (array == null) return;
+            int size = array.size();
+            for (int index = 0; index < size; index++) {
+                item = (CityObj) mCitiesList.getAdapter().getItem(array.keyAt(index));
+                tzId.add(item.mCityId);
+            }
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            doFilterLocal(s.toString());
+            // recover the state of the list
+            int sizeOfList = mCitiesList.getCount();
+            CityObj item;
+            for (int index = 0; index < sizeOfList; index++) {
+                item = (CityObj) mCitiesList.getAdapter().getItem(index);
+                if (tzId.contains(item.mCityId)) {
+                    mCitiesList.setItemChecked(index, true);
+                }
+            }
+        }
+    };
+
+    /**
+     * Called from a background thread to do the filter and return the resulting
+     * cursor.
+     *
+     * @param filter the text that was entered to filter on
+     * @return a cursor with the results of the filter
+     */
+
+    void doFilterLocal(String filter)
+    {
+        if ( null == filter ) {
+            filter = "";
+        }
+        mCitiesList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        mAdapter.loadSearchList(filter);
+        mCitiesList.setAdapter(mAdapter);
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override

@@ -349,6 +349,9 @@ public class Alarms {
         Alarm alarm = null;
 
         for (Alarm a : alarms) {
+            if (a == null) {
+                continue;
+            }
             // A time of 0 indicates this is a repeating alarm, so
             // calculate the time to get the next alert.
             if (a.time == 0) {

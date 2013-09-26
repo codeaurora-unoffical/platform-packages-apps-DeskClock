@@ -13,15 +13,46 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-
-<ListView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/cities_list"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:clickable="true"
+    android:gravity="center_vertical"
     android:paddingLeft="8dip"
-    android:paddingStart="8dip"
-    android:paddingRight="32dip"
-    android:paddingEnd="32dip"
-    android:clipToPadding="false" />
+    android:paddingRight="8dip"
+    android:background="?android:attr/selectableItemBackground"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout android:id="@+id/SearchLayout"
+        android:layout_height="50dip"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent">
+            <EditText android:id="@+id/search_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="49dip"
+                android:layout_alignParentTop="true"
+                android:layout_gravity="right"
+                android:textSize="20sp"
+                android:layout_weight="23"
+                android:maxLength="64"
+                android:inputType="textCapCharacters"
+                android:imeOptions="actionDone"
+                android:autoText="false"
+            />
+            <ImageView android:id="@+id/search_icon"
+                android:layout_width="48dip"
+                android:background="@android:drawable/ic_menu_search"
+                android:layout_height="48dip"
+                 >
+            </ImageView>
+    </LinearLayout>
+         <ListView
+            android:id="@+id/cities_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:paddingLeft="8dip"
+            android:paddingRight="32dip"
+            android:clipToPadding="false" />
+
+</LinearLayout>
