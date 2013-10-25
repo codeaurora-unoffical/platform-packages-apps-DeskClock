@@ -453,7 +453,7 @@ public class Alarms {
         PendingIntent sender = PendingIntent.getBroadcast(
                 context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-        am.set(AlarmManager.RTC_WAKEUP, atTimeInMillis, sender);
+        am.set(AlarmManager.RTC_POWEROFF_WAKEUP, atTimeInMillis, sender);
 
         setStatusBarIcon(context, true);
 
