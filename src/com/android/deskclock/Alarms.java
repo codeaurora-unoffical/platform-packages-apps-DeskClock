@@ -29,6 +29,8 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
+import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
@@ -106,6 +108,10 @@ public class Alarms {
     final static String M24 = "kk:mm";
 
     final static int INVALID_ALARM_ID = -1;
+    // If power on time to alarm time less than two minutes
+    // is considered to be a power off alarm
+    private static final int ALARM_THRESHOLD = 120 * 1000;
+    private static final String PROP_POWERON_ALERT = "persist.env.deskclock.poalert";
 
     /**
      * Creates a new Alarm and fills in the given alarm's id.
@@ -663,5 +669,22 @@ public class Alarms {
      */
     public static boolean get24HourMode(final Context context) {
         return android.text.format.DateFormat.is24HourFormat(context);
+    }
+
+    /**
+     * @return true if the alarm is a power off alarm
+     */
+    public static boolean isPowerOffAlarm(Alarm currentAlarm) {
+        boolean isPoAlarm = false;
+        long now = System.currentTimeMillis();
+        long upTimeToNow = SystemClock.uptimeMillis();
+        long upTime = now - upTimeToNow;
+
+        if (SystemProperties.getBoolean(PROP_POWERON_ALERT, false)) {
+            if (currentAlarm.time - upTime < ALARM_THRESHOLD){
+                isPoAlarm = true;
+            }
+        }
+        return isPoAlarm;
     }
 }
