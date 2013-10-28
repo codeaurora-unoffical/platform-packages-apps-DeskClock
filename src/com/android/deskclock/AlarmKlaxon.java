@@ -236,6 +236,10 @@ public class AlarmKlaxon extends Service {
             throws java.io.IOException, IllegalArgumentException,
                    IllegalStateException {
         final AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+
+        audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
         // do not play alarms if stream volume is 0
         // (typically because ringer mode is silent).
         if (audioManager.getStreamVolume(AudioManager.STREAM_ALARM) != 0) {
@@ -261,9 +265,11 @@ public class AlarmKlaxon extends Service {
      * repeating
      */
     public void stop() {
+        final AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         if (Log.LOGV) Log.v("AlarmKlaxon.stop()");
         if (mPlaying) {
             mPlaying = false;
+            audioManager.abandonAudioFocus(null);
 
             // Stop audio playing
             if (mMediaPlayer != null) {
