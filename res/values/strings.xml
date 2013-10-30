@@ -23,6 +23,7 @@
     <!-- Title for AlarmClock activity -->
     <!-- Label for the Alarms activity displayed on-screen when that activity must be represented to the user. -->
     <string name="alarm_list_title">Alarms</string>
+    <string name="alarm_default_ringtone_title">Default ringtone</string>
 
     <!-- Menu item on Alarm Clock screen: Add alarm -->
     <string name="add_alarm">Add alarm</string>
