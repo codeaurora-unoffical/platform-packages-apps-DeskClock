@@ -24,6 +24,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.PowerManager.WakeLock;
+import android.os.SystemProperties;
+import android.telephony.TelephonyManager;
 
 import java.util.Calendar;
 
@@ -36,6 +38,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     /** If the alarm is older than STALE_WINDOW, ignore.  It
         is probably the result of a time or timezone change */
     private final static int STALE_WINDOW = 30 * 60 * 1000;
+    private final static String INCALLSNOOZE_PROPERTY = "persist.env.deskclock.incallsnz";
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
@@ -100,6 +103,20 @@ public class AlarmReceiver extends BroadcastReceiver {
             // Make sure we set the next alert if needed.
             Alarms.setNextAlert(context);
             return;
+        }
+
+        /**
+         * If the phone is busy, keep the alarm snoozing.
+         * When the call is ended, the new coming alarm or the alarm which wakes from sooze,
+         * will skip the codes here and continue show the alarm as normal.
+         */
+        if(SystemProperties.getBoolean(INCALLSNOOZE_PROPERTY, false)) {
+            TelephonyManager telephonyManager =
+                    (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            if(telephonyManager.getCallState() != TelephonyManager.CALL_STATE_IDLE) {
+                snooze(alarm,context);
+                return;
+            }
         }
 
         // Disable the snooze alert if this alarm is the snooze.
@@ -202,6 +219,48 @@ public class AlarmReceiver extends BroadcastReceiver {
         // Send the notification using the alarm id to easily identify the
         // correct notification.
         NotificationManager nm = getNotificationManager(context);
+        nm.notify(alarm.id, n);
+    }
+
+    /**
+     * Make the alarm snooze for MILLISECOND_TO_SNOOZE milliseconds.
+     * If the phone is still busy in call, this method will be called again
+     * to snooze for another MILLISECOND_TO_SNOOZE milliseconds.
+     * If the phone is not busy in call anymore, this method will not be
+     * called, and the alarm will wake up within MILLISECOND_TO_SNOOZE
+     * milliseconds.
+     */
+    private void snooze(Alarm alarm,Context context) {
+
+        // The time to snooze is set to 1000 millisecond. 1 second is not too long or short,
+        // so that the user could see the alarm screen within 1 second after call ends.
+        final int MILLISECOND_TO_SNOOZE = 1000;
+        final long snoozeTime = System.currentTimeMillis() + MILLISECOND_TO_SNOOZE;
+        Alarms.saveSnoozeAlert(context, alarm.id,  snoozeTime);
+
+        // Get the display time for the snooze and update the notification.
+        final Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(snoozeTime);
+
+        // Append (snoozed) to the label.
+        String label = alarm.getLabelOrDefault(context);
+        label = context.getString(R.string.alarm_notify_snooze_label, label);
+
+        // Notify the user that the alarm has been snoozed.
+        Intent cancelSnooze = new Intent(context, AlarmReceiver.class);
+        cancelSnooze.setAction(Alarms.CANCEL_SNOOZE);
+        cancelSnooze.putExtra(Alarms.ALARM_INTENT_EXTRA, alarm);
+        PendingIntent broadcast =
+                PendingIntent.getBroadcast(context, alarm.id, cancelSnooze, 0);
+        NotificationManager nm =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification n = new Notification(R.drawable.stat_notify_alarm,
+                label, 0);
+        n.setLatestEventInfo(context, label,
+                context.getString(R.string.alarm_notify_snooze_text,
+                    Alarms.formatTime(context, c)), broadcast);
+        n.flags |= Notification.FLAG_AUTO_CANCEL
+                | Notification.FLAG_ONGOING_EVENT;
         nm.notify(alarm.id, n);
     }
 
