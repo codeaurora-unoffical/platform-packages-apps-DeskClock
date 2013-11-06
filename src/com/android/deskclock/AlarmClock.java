@@ -36,6 +36,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.provider.MediaStore;
 import android.view.ActionMode;
 import android.view.ActionMode.Callback;
 import android.view.LayoutInflater;
@@ -1068,10 +1069,24 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
             String title = mRingtoneTitleCache.getString(uri.toString());
             if (title == null) {
                 // This is slow because a media player is created during Ringtone object creation.
-                Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
-                title = ringTone.getTitle(mContext);
-                if (title != null) {
-                    mRingtoneTitleCache.putString(uri.toString(), title);
+                Cursor c = null;
+                try {
+                    c = mContext.getContentResolver().query(uri,
+                            new String[] {
+                                MediaStore.Audio.Media.TITLE
+                            }, null, null, null);
+                    if (c == null || c.getCount() <= 0)
+                        title = mContext.getString(R.string.alarm_fallback_ringtone_title);
+                    else {
+                        Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
+                        title = ringTone.getTitle(mContext);
+                    }
+                    if (title != null) {
+                        mRingtoneTitleCache.putString(uri.toString(), title);
+                    }
+
+                } catch (Exception e) {
+                    Log.e("AlarmClock e.toString=" + e.toString());
                 }
             }
             return title;
