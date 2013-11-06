@@ -198,6 +198,9 @@
     <!-- Auto silence summary when turned off -->
     <string name="auto_silence_never">Never</string>
 
+    <!-- The default Auto silence value -->
+    <string name="default_auto_silence_value">10</string>
+
     <!-- Entries listed in the ListPreference when invoking the auto silence
          preference. -->
     <string-array name="auto_silence_entries">

@@ -30,10 +30,15 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Vibrator;
+import android.os.SystemProperties;
 import android.preference.PreferenceManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.text.format.DateUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Manages alarms and vibe. Runs as a service so that it can continue to play
@@ -73,12 +78,17 @@ public class AlarmKlaxon extends Service {
     private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
         @Override
         public void onCallStateChanged(int state, String ignored) {
-            // The user might already be in a call when the alarm fires. When
-            // we register onCallStateChanged, we get the initial in-call state
-            // which kills the alarm. Check against the initial call state so
-            // we don't kill the alarm during a call.
-            if (state != TelephonyManager.CALL_STATE_IDLE
-                    && state != mInitialCallState) {
+            boolean isSilentDuringCall =
+                SystemProperties.getBoolean("persist.env.alarm.silent", false);
+            // we kill the alarm during a call
+            if (isSilentDuringCall  == true && state != TelephonyManager.CALL_STATE_IDLE) {
+                sendKillBroadcast(mCurrentAlarm, false);
+                stopSelf();
+            }else if (state != TelephonyManager.CALL_STATE_IDLE && state != mInitialCallState) {
+                // The user might already be in a call when the alarm fires. When
+                // we register onCallStateChanged, we get the initial in-call state
+                // which kills the alarm. Check against the initial call state so
+                // we don't kill the alarm during a call.
                 sendKillBroadcast(mCurrentAlarm, false);
                 stopSelf();
             }
