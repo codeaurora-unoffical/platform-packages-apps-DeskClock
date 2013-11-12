@@ -257,6 +257,14 @@ public class AlarmKlaxon extends Service {
             player.setLooping(true);
             player.prepare();
             player.start();
+        } else if (SystemProperties.getBoolean("persist.env.alarm.ring.enable", false)) {
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM,
+                       audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+                       0);
+            player.setAudioStreamType(AudioManager.STREAM_ALARM);
+            player.setLooping(true);
+            player.prepare();
+            player.start();
         }
     }
 
