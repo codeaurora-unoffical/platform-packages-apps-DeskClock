@@ -852,6 +852,9 @@ public class TimerFragment extends DeskClockFragment
     }
 
     public void setLabel(TimerObj timer, String label) {
+        if (mAdapter.findTimerPositionById(timer.mTimerId) == -1) {
+            return;
+        }
         ((TimerObj) mAdapter.getItem(
                 mAdapter.findTimerPositionById(timer.mTimerId))).mLabel = label;
         if (timer.mState == TimerObj.STATE_TIMESUP) {
