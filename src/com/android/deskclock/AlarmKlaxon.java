@@ -57,6 +57,8 @@ public class AlarmKlaxon extends Service {
     private long mStartTime;
     private TelephonyManager mTelephonyManager;
     private int mInitialCallState;
+    private static final String ALARM_POWER_OFF_ACTION =
+            "org.codeaurora.poweronalert.action.ALARM_POWER_OFF";
 
     // Internal messages
     private static final int KILLER = 1000;
@@ -70,6 +72,11 @@ public class AlarmKlaxon extends Service {
                     }
                     sendKillBroadcast((Alarm) msg.obj, false);
                     stopSelf();
+                    // If power on due to alarm, and no user operation, implement to power off
+                    // after alarm timeout
+                    if(Alarms.isPowerOffAlarm(AlarmKlaxon.this)){
+                        sendBroadcast(new Intent(ALARM_POWER_OFF_ACTION));
+                    }
                     break;
             }
         }
