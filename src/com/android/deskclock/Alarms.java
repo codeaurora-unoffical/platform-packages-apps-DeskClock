@@ -29,7 +29,9 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
+import android.os.SystemProperties;
 import android.provider.Settings;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 
@@ -106,6 +108,9 @@ public class Alarms {
     final static String M24 = "kk:mm";
 
     final static int INVALID_ALARM_ID = -1;
+    public static final String PROP_POWERON_ALERT = "persist.env.deskclock.poalert";
+    private static final String FIRST_ALARM_FLAG = "first_alarm";
+
 
     /**
      * Creates a new Alarm and fills in the given alarm's id.
@@ -663,5 +668,31 @@ public class Alarms {
      */
     public static boolean get24HourMode(final Context context) {
         return android.text.format.DateFormat.is24HourFormat(context);
+    }
+
+    /**
+     * @return true if the alarm is a power off alarm
+     */
+    public static boolean isPowerOffAlarm(Context context) {
+        boolean isPoAlarm = false;
+        SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(context);
+
+        if (SystemProperties.getBoolean(PROP_POWERON_ALERT, false)) {
+            if (prefs.getBoolean(Alarms.FIRST_ALARM_FLAG, false)){
+                isPoAlarm = true;
+                saveFirstAlarm(prefs,false);
+            }
+        }
+        return isPoAlarm;
+    }
+
+    /**
+     * Save flag for first Alarm
+     */
+    public static void saveFirstAlarm(SharedPreferences prefs,Boolean isFirstAlarm) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(Alarms.FIRST_ALARM_FLAG,isFirstAlarm);
+        editor.apply();
     }
 }
