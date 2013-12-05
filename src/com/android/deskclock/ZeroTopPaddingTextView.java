@@ -25,9 +25,9 @@ import android.widget.TextView;
  * Displays text with no padding at the top.
  */
 public class ZeroTopPaddingTextView extends TextView {
-    private static final float NORMAL_FONT_PADDING_RATIO = 0.328f;
+    private static final float NORMAL_FONT_PADDING_RATIO = 0.228f;
     // the bold fontface has less empty space on the top
-    private static final float BOLD_FONT_PADDING_RATIO = 0.208f;
+    private static final float BOLD_FONT_PADDING_RATIO = 0.108f;
 
     private static final float NORMAL_FONT_BOTTOM_PADDING_RATIO = 0.25f;
     // the bold fontface has less empty space on the top
