@@ -187,7 +187,6 @@ public class CitiesActivity extends Activity implements OnCheckedChangeListener,
                     // Not adding a header for the international
                     // languages' difference and the searching programme
                     // items.add(new CityObj(val, null, null));
-                    count++;
                 }
                 items.add(city);
                 count++;
