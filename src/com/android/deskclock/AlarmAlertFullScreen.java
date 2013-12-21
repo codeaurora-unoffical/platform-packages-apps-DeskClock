@@ -30,6 +30,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemProperties;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -67,7 +68,8 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
     private static final long PING_AUTO_REPEAT_DELAY_MSEC = 1200;
 
     private boolean mPingEnabled = true;
-    private static final String ACTION_POWER_ON_ALERT = "android.app.action.POWER_ON_ALERT";
+    private static final String ACTION_POWER_ON_ALERT =
+            "org.codeaurora.poweronalert.action.POWER_ON_ALERT";
 
     // Receives the ALARM_KILLED action from the AlarmKlaxon,
     // and also ALARM_SNOOZE_ACTION / ALARM_DISMISS_ACTION from other applications
@@ -274,7 +276,7 @@ public class AlarmAlertFullScreen extends Activity implements GlowPadView.OnTrig
 
             // If the alarm is power off alarm,To start a remainder dialog
             // to remind user if power on or not
-            if(Alarms.isPowerOffAlarm(mAlarm)){
+            if(Alarms.isPowerOffAlarm(AlarmAlertFullScreen.this)){
                 startPowerOnAlert();
             }
         }
