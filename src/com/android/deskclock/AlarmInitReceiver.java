@@ -30,8 +30,8 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 
     // A flag that indicates that switching the volume button default was done
     private static final String PREF_VOLUME_DEF_DONE = "vol_def_done";
-    private static final String PROP_BOOT_MODE = "ro.bootmode";
-    private static final String BOOT_ALARM = "alarm";
+    private static final String PROP_BOOT_MODE = "ro.alarm_boot";
+    private static final String BOOT_ALARM = "true";
 
     /**
      * Sets alarm on ACTION_BOOT_COMPLETED.  Resets alarm on
