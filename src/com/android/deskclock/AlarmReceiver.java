@@ -214,7 +214,8 @@ public class AlarmReceiver extends BroadcastReceiver {
         alarmAlert.putExtra(Alarms.ALARM_INTENT_EXTRA, alarm);
         alarmAlert.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-        n.fullScreenIntent = PendingIntent.getActivity(context, alarm.id, alarmAlert, 0);
+        n.fullScreenIntent = PendingIntent.getActivity(context, alarm.id,
+                alarmAlert, PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Send the notification using the alarm id to easily identify the
         // correct notification.
