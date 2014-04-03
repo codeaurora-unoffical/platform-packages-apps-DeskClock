@@ -25,6 +25,7 @@
                 android:exported="false" />
 
         <activity android:name="DeskClock"
+                android:configChanges="orientation|keyboardHidden|screenSize"
                 android:label="@string/app_label"
                 android:theme="@style/DeskClock"
                 android:icon="@mipmap/ic_launcher_alarmclock"
