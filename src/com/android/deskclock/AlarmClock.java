@@ -796,6 +796,8 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
 
             if (isAlarmExpanded(alarm)) {
                 expandAlarm(itemHolder);
+            } else {
+                itemHolder.daysOfWeek.requestLayout();
             }
             view.setOnLongClickListener(mLongClickListener);
             view.setOnClickListener(new View.OnClickListener() {
@@ -955,6 +957,7 @@ public class AlarmClock extends Activity implements LoaderManager.LoaderCallback
                     }
                     itemHolder.expandArea.setVisibility(LinearLayout.GONE);
                     itemHolder.infoArea.setVisibility(View.VISIBLE);
+                    itemHolder.daysOfWeek.requestLayout();
                     collapseAlarm(alarm);
                 }
             });
