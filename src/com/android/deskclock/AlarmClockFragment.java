@@ -102,6 +102,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
     private static final String KEY_PREVIOUS_DAY_MAP = "previousDayMap";
     private static final String KEY_SELECTED_ALARM = "selectedAlarm";
     private static final String KEY_DELETE_CONFIRMATION = "deleteConfirmation";
+    private static final String KEY_SELECT_SOURCE = "selectedSource";
 
     private static final int REQUEST_CODE_RINGTONE = 1;
     private static final int REQUEST_CODE_EXTERN_AUDIO = 2;
@@ -182,6 +183,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
             selectedAlarms = savedState.getLongArray(KEY_SELECTED_ALARMS);
             previousDayMap = savedState.getBundle(KEY_PREVIOUS_DAY_MAP);
             mSelectedAlarm = savedState.getParcelable(KEY_SELECTED_ALARM);
+            mSelectSource = savedState.getInt(KEY_SELECT_SOURCE);
         }
 
         mExpandInterpolator = new DecelerateInterpolator(EXPAND_DECELERATION);
@@ -530,6 +532,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
         outState.putBoolean(KEY_UNDO_SHOWING, mUndoShowing);
         outState.putBundle(KEY_PREVIOUS_DAY_MAP, mAdapter.getPreviousDaysOfWeekMap());
         outState.putParcelable(KEY_SELECTED_ALARM, mSelectedAlarm);
+        outState.putInt(KEY_SELECT_SOURCE, mSelectSource);
     }
 
     @Override
