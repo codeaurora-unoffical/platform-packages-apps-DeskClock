@@ -103,6 +103,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
     private static final String KEY_SELECTED_ALARM = "selectedAlarm";
     private static final String KEY_DELETE_CONFIRMATION = "deleteConfirmation";
 
+    private static final String DOC_AUTHORITY = "com.android.providers.media.documents";
+
     private static final int REQUEST_CODE_RINGTONE = 1;
     private static final int REQUEST_CODE_EXTERN_AUDIO = 2;
 
@@ -122,6 +124,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
     private View mTimelineLayout;
     private AlarmTimelineView mTimelineView;
     private View mFooterView;
+
+    private String mDisplayName;
 
     private Bundle mRingtoneTitleCache; // Key: ringtone uri, value: ringtone title
     private ActionableToastBar mUndoBar;
@@ -1431,8 +1435,12 @@ public class AlarmClockFragment extends DeskClockFragment implements
                 title = mContext.getString(R.string.ringtone_default);
                 if (isRingToneUriValid(uri)) {
                     // This is slow because a media player is created during Ringtone object creation.
-                    Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
-                    title = ringTone.getTitle(mContext);
+                    if (uri.getAuthority().equals(DOC_AUTHORITY)) {
+                        title = mDisplayName;
+                    } else {
+                        Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
+                        title = ringTone.getTitle(mContext);
+                    }
                 }
 
                 if (title != null) {
@@ -1452,8 +1460,15 @@ public class AlarmClockFragment extends DeskClockFragment implements
                 Cursor cursor = null;
                 try {
                     cursor = mContext.getContentResolver().query(uri,
-                            new String[] {MediaStore.Audio.Media.TITLE}, null, null, null);
-                    if (cursor != null && cursor.getCount() > 0) {
+                            new String[] {
+                                    MediaStore.Audio.Media.TITLE,
+                                    MediaStore.Audio.Media.DISPLAY_NAME
+                            }, null, null, null);
+                 if (cursor != null && cursor.getCount() > 0) {
+                        if (uri.getAuthority().equals(DOC_AUTHORITY)) {
+                            cursor.moveToFirst();
+                            mDisplayName = cursor.getString(1);
+                        }
                         return true;
                     }
                 } catch (Exception e) {
