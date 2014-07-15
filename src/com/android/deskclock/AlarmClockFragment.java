@@ -1831,7 +1831,9 @@ public class AlarmClockFragment extends DeskClockFragment implements
     }
 
     private void asyncDeleteAlarm(final Alarm alarm, final View viewToRemove) {
-        final Context context = AlarmClockFragment.this.getActivity().getApplicationContext();
+        Activity activity = AlarmClockFragment.this.getActivity();
+        if (activity == null) return;
+        final Context context = activity.getApplicationContext();
         final AsyncTask<Void, Void, Void> deleteTask = new AsyncTask<Void, Void, Void>() {
             @Override
             public synchronized void onPreExecute() {
