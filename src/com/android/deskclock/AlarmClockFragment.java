@@ -52,6 +52,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.transition.AutoTransition;
 import android.transition.Fade;
 import android.transition.Transition;
@@ -133,6 +135,9 @@ public class AlarmClockFragment extends DeskClockFragment implements
 
     private static final String DOC_AUTHORITY = "com.android.providers.media.documents";
     private static final String DOC_DOWNLOAD = "com.android.providers.downloads.documents";
+    private static final String DOWNLOAD_CONTENT = "content://downloads/public_downloads";
+    private static final String COLON = ":";
+    private static final int ID_INDEX = 1;
 
     private static final int REQUEST_CODE_RINGTONE = 1;
     private static final int REQUEST_CODE_EXTERN_AUDIO = 2;
@@ -1446,7 +1451,17 @@ public class AlarmClockFragment extends DeskClockFragment implements
                             }
                         }
                     }
+
+                    if (uri.getAuthority().equals(DOC_AUTHORITY)
+                            || uri.getAuthority().equals(DOC_DOWNLOAD)) {
+                        title = getDisplayNameFromDatabase(mContext,uri);
+                    } else {
+                        // This is slow because a media player is created during Ringtone object creation.
+                        Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
+                        title = ringTone.getTitle(mContext);
+                    }
                 }
+
                 if (title != null) {
                     mRingtoneTitleCache.putString(uri.toString(), title);
                 }
@@ -1464,14 +1479,14 @@ public class AlarmClockFragment extends DeskClockFragment implements
             if (uri.getAuthority().equals(DOC_DOWNLOAD)) {
                 final String id = DocumentsContract.getDocumentId(uri);
                 uri = ContentUris.withAppendedId(
-                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                        Uri.parse(DOWNLOAD_CONTENT), Long.valueOf(id));
             } else if (uri.getAuthority().equals(DOC_AUTHORITY)) {
                 final String docId = DocumentsContract.getDocumentId(uri);
-                final String[] split = docId.split(":");
+                final String[] split = docId.split(COLON);
                 uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
                 selection = "_id=?";
                 selectionArgs = new String[] {
-                    split[1]
+                    split[ID_INDEX]
                 };
             }
             Cursor cursor = null;
