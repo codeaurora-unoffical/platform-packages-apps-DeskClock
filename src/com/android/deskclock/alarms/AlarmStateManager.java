@@ -477,7 +477,6 @@ public final class AlarmStateManager extends BroadcastReceiver {
 
         // Instance is not valid anymore, so find next alarm that will fire and notify system
         updateNextAlarm(context);
-
     }
 
     /**
@@ -504,14 +503,6 @@ public final class AlarmStateManager extends BroadcastReceiver {
 
         // Instance is not valid anymore, so find next alarm that will fire and notify system
         updateNextAlarm(context);
-        if (isPowerOffAlarm(context)) {
-            try {
-                context.startActivity(new Intent(ACTION_POWER_ON_ALERT)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (ActivityNotFoundException ex) {
-                // do nothing, the powerOnAlert app couldn't be found.
-            }
-        }
     }
 
     /**
@@ -608,7 +599,7 @@ public final class AlarmStateManager extends BroadcastReceiver {
             alarmBuffer.add(Calendar.SECOND, ALARM_FIRE_BUFFER);
             if (currentTime.before(alarmBuffer)) {
                 setFiredState(context, instance);
-            } else {
+            } else if (!AlarmActivity.mIsAlarmBoot) {
                 setMissedState(context, instance);
             }
         } else if (instance.mAlarmState == AlarmInstance.SNOOZE_STATE) {
