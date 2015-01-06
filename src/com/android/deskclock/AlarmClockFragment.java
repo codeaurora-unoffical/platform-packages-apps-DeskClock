@@ -1464,7 +1464,37 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     return true;
                 }
             } else if (uri.getScheme().contentEquals("content")) {
-                return true;
+                String selection = null;
+                String[] selectionArgs = null;
+                if (uri.getAuthority().equals(DOC_DOWNLOAD)) {
+                    final String id = DocumentsContract.getDocumentId(uri);
+                    uri = ContentUris.withAppendedId(
+                            Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                } else if (uri.getAuthority().equals(DOC_AUTHORITY)) {
+                    final String docId = DocumentsContract.getDocumentId(uri);
+                    final String[] split = docId.split(":");
+                    uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                    selection = "_id=?";
+                    selectionArgs = new String[] {
+                        split[1]
+                    };
+                }
+                Cursor cursor = null;
+                try {
+                    cursor = mContext.getContentResolver().query(uri,
+                            new String[] {
+                                    MediaStore.Audio.Media.TITLE,
+                            }, selection, selectionArgs, null);
+                 if (cursor != null && cursor.getCount() > 0) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    Log.e("Get ringtone uri Exception: e.toString=" + e.toString());
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                }
             }
 
             return false;
