@@ -133,8 +133,6 @@ public class AlarmClockFragment extends DeskClockFragment implements
     private static final String KEY_DELETE_CONFIRMATION = "deleteConfirmation";
     private static final String KEY_SELECT_SOURCE = "selectedSource";
 
-    private static final String DOC_AUTHORITY = "com.android.providers.media.documents";
-    private static final String DOC_DOWNLOAD = "com.android.providers.downloads.documents";
     private static final String DOWNLOAD_CONTENT = "content://downloads/public_downloads";
     private static final String COLON = ":";
     private static final int ID_INDEX = 1;
@@ -724,8 +722,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
     }
 
     private Uri getRingtoneUri(Intent intent) {
-        // Release the current ringtone uri
-        releaseRingtoneUri(mSelectedAlarm.alert);
+        boolean releaseRingtoneUri = true;
 
         Uri uri;
         if (mSelectSource == SEL_SRC_RINGTONE) {
@@ -733,6 +730,9 @@ public class AlarmClockFragment extends DeskClockFragment implements
         } else {
             uri = intent.getData();
             if (uri != null) {
+                // if the alarms are the same, don't revoke the permissions
+                releaseRingtoneUri = !uri.equals(mSelectedAlarm.alert);
+
                 try {
                     getActivity().getContentResolver().takePersistableUriPermission(
                             uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -747,6 +747,12 @@ public class AlarmClockFragment extends DeskClockFragment implements
         if (uri == null) {
             uri = Alarm.NO_RINGTONE_URI;
         }
+
+        if (releaseRingtoneUri) {
+            // Release the current ringtone uri
+            releaseRingtoneUri(mSelectedAlarm.alert);
+        }
+
         return uri;
     }
 
@@ -1436,8 +1442,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     title = mContext.getResources().getString(R.string.alarm_type_random);
                 } else {
                     if (Utils.isRingToneUriValid(mContext, uri)) {
-                        if (uri.getAuthority().equals(DOC_AUTHORITY)
-                                || uri.getAuthority().equals(DOC_DOWNLOAD)) {
+                        if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)
+                                || uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
                             title = getDisplayNameFromDatabase(mContext,uri);
                         } else if (uri.isPathPrefixMatch(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI)) {
                             Cursor c = getActivity().getContentResolver().query(uri, new String[] {MediaStore.Audio.Playlists.NAME}, null, null, null);
@@ -1452,8 +1458,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
                         }
                     }
 
-                    if (uri.getAuthority().equals(DOC_AUTHORITY)
-                            || uri.getAuthority().equals(DOC_DOWNLOAD)) {
+                    if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)
+                            || uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
                         title = getDisplayNameFromDatabase(mContext,uri);
                     } else {
                         // This is slow because a media player is created during Ringtone object creation.
@@ -1476,11 +1482,11 @@ public class AlarmClockFragment extends DeskClockFragment implements
             // If restart Alarm,there is no permission to get the title from the uri.
             // No matter in which database,the music has the same id.
             // So we can only get the info of the music from other database by id in uri.
-            if (uri.getAuthority().equals(DOC_DOWNLOAD)) {
+            if (uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
                 final String id = DocumentsContract.getDocumentId(uri);
                 uri = ContentUris.withAppendedId(
                         Uri.parse(DOWNLOAD_CONTENT), Long.valueOf(id));
-            } else if (uri.getAuthority().equals(DOC_AUTHORITY)) {
+            } else if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)) {
                 final String docId = DocumentsContract.getDocumentId(uri);
                 final String[] split = docId.split(COLON);
                 uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
