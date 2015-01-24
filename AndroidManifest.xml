@@ -20,6 +20,7 @@
     <uses-permission android:name="com.android.deskclock.worldclock.permissions.WRITE_DATABASE" />
 
     <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="17" ></uses-sdk>
+    <uses-permission android:name="org.codeaurora.permission.POWER_ON_ALERT" />
 
     <application android:label="@string/app_label"
                  android:icon="@mipmap/ic_launcher_alarmclock"
