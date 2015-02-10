@@ -18,6 +18,8 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_PACKAGE_NAME := DeskClock
 
+LOCAL_CERTIFICATE := platform
+
 LOCAL_OVERRIDES_PACKAGES := AlarmClock
 
 LOCAL_PROGUARD_FLAG_FILES := proguard.flags
