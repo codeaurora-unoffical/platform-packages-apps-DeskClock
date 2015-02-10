@@ -49,4 +49,8 @@
 
     <color name="time_picker_gray">#212121</color>
 
+    <!-- The color of the material notification background -->
+    <color name="notification_material_background_color">#fffafafa</color>
+    <!-- The color of the material notification background when low priority -->
+    <color name="notification_material_background_low_priority_color">#ffe0e0e0</color>
 </resources>
