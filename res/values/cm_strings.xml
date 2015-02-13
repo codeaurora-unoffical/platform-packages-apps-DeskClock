@@ -74,7 +74,6 @@
 
     <!-- Alarm types -->
     <string name="alarm_type_ringtone">Ringtone</string>
-    <string name="alarm_type_playlist">Playlist</string>
     <string name="alarm_type_random">Randomly</string>
 
     <!-- Warn Silent Alarm title -->
