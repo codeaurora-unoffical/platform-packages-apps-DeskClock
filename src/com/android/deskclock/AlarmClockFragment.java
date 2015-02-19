@@ -1404,15 +1404,6 @@ public class AlarmClockFragment extends DeskClockFragment implements
                             }
                         }
                     }
-
-                    if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)
-                            || uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
-                        title = getDisplayNameFromDatabase(mContext,uri);
-                    } else {
-                        // This is slow because a media player is created during Ringtone object creation.
-                        Ringtone ringTone = RingtoneManager.getRingtone(mContext, uri);
-                        title = ringTone.getTitle(mContext);
-                    }
                 }
 
                 if (title != null) {
