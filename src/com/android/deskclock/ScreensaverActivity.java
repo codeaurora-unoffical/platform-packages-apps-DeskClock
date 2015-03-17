@@ -152,7 +152,7 @@ public class ScreensaverActivity extends Activity {
         super.onConfigurationChanged(newConfig);
         mHandler.removeCallbacks(mMoveSaverRunnable);
         layoutClockSaver();
-        mHandler.postDelayed(mMoveSaverRunnable, 250);
+        mHandler.postDelayed(mMoveSaverRunnable, Screensaver.ORIENTATION_CHANGE_DELAY_MS);
     }
 
     @Override
@@ -187,9 +187,7 @@ public class ScreensaverActivity extends Activity {
         mAnalogClock = findViewById(R.id.analog_clock);
         setClockStyle();
         Utils.setTimeFormat((TextClock)mDigitalClock,
-            (int)getResources().getDimension(R.dimen.digital_screensaver_clock_ampm_font_size));
-        Utils.setTimeTextSize((TextClock)mDigitalClock,
-                R.dimen.digital_screensaver_clock_size_with_am_pm);
+            (int)getResources().getDimension(R.dimen.main_ampm_font_size));
 
         mContentView = (View) mSaverView.getParent();
         mContentView.forceLayout();

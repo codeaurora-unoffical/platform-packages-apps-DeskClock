@@ -22,22 +22,15 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
-import android.os.RemoteException;
-import android.os.UserHandle;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -48,7 +41,7 @@ import android.view.ViewGroupOverlay;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextClock;
 import android.widget.TextView;
 
@@ -72,11 +65,6 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
      */
     public static final String ALARM_DISMISS_ACTION = "com.android.deskclock.ALARM_DISMISS";
 
-    private static final String ACTION_SETTING_AIRPLANE_MODE_CHANGED =
-            "android.action.SETTING_AIRPLANE_MODE_UPDATE";
-
-    private static final String POWER_OFF_ALARM_MODE = "POWER_OFF_ALARM_MODE";
-
     private static final String LOGTAG = AlarmActivity.class.getSimpleName();
 
     private static final Interpolator PULSE_INTERPOLATOR =
@@ -94,39 +82,6 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     private static final float BUTTON_SCALE_DEFAULT = 0.7f;
     private static final int BUTTON_DRAWABLE_ALPHA_DEFAULT = 165;
 
-    private static final int AIRPLANE_ON = 1;
-
-    public static boolean mIsAlarmBoot = false;
-
-    private static final int SHUTDOWN_ALARM_VIEW = 1;
-    private static final int SHUTDOWN_POWER_OFF = 2;
-
-    private Context mContext;
-    private int mDefaultAirplaneMode = 0; // default off
-
-    private boolean mIsSoonze = false;
-    private boolean mIsPowerOffing = false;
-
-    private Handler mBootHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-
-            switch(msg.what) {
-            case SHUTDOWN_ALARM_VIEW:
-                LogUtils.v(LOGTAG, "SHUTDOWN_ALARM_VIEW finish before sleep 500ms");
-                finish();
-                break;
-
-            case SHUTDOWN_POWER_OFF:
-                LogUtils.v(LOGTAG, "SHUTDOWN_POWER_OFF directly power off");
-                powerOff();
-                break;
-
-            default: // normally will not go here
-            }
-        }
-    };
-
     private final Handler mHandler = new Handler();
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -143,9 +98,7 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
                         dismiss();
                         break;
                     case AlarmService.ALARM_DONE_ACTION:
-                        if (!mIsAlarmBoot || mIsSoonze) {
-                            finish();
-                        }
+                        finish();
                         break;
                     default:
                         LogUtils.i(LOGTAG, "Unknown broadcast: %s", action);
@@ -161,6 +114,7 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     private boolean mAlarmHandled;
     private String mVolumeBehavior;
     private int mCurrentHourColor;
+    private boolean mReceiverRegistered;
 
     private ViewGroup mContainerView;
 
@@ -169,9 +123,9 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     private TextView mAlertInfoView;
 
     private ViewGroup mContentView;
-    private ImageButton mAlarmButton;
-    private ImageButton mSnoozeButton;
-    private ImageButton mDismissButton;
+    private ImageView mAlarmButton;
+    private ImageView mSnoozeButton;
+    private ImageView mDismissButton;
     private TextView mHintView;
 
     private ValueAnimator mAlarmAnimator;
@@ -183,60 +137,31 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Uri intentData = getIntent().getData();
-
-        mIsAlarmBoot = getIntent().getBooleanExtra("ro.alarm_boot", false);
-        mContext = getApplicationContext();
-
-        LogUtils.v(LOGTAG, "AlarmBoot start alarm activity, "
-                + "alarm boot = " + mIsAlarmBoot + " | getIntent() " + getIntent());
-
-        if (mIsAlarmBoot) {
-            AlarmStateManager.setRtcPowerUp(mContext, mIsAlarmBoot);
-            mAlarmInstance = AlarmInstance.getFirstAlarmInstance(mContext.getContentResolver());
-
-            Settings.System.putString(mContext.getContentResolver(), POWER_OFF_ALARM_MODE, "true");
-
-            mDefaultAirplaneMode = Settings.Global.getInt(mContext.getContentResolver(),
-                    Settings.Global.AIRPLANE_MODE_ON, 0);
-
-            LogUtils.v(LOGTAG, "AlarmBoot AlarmActivity onCreate"
-                    + " mDefaultAirplaneMode = " + mDefaultAirplaneMode);
-            updateAirplaneMode(AIRPLANE_ON);  // turn on airplane mode
-        } else if (intentData != null) {
-            long instanceId = AlarmInstance.getId(intentData);
-            mAlarmInstance = AlarmInstance.getInstance(this.getContentResolver(), instanceId);
-        }
-
-        if (mAlarmInstance != null) {
-            LogUtils.i(LOGTAG, "Displaying alarm for instance: %s", mAlarmInstance);
-        } else {
+        final long instanceId = AlarmInstance.getId(getIntent().getData());
+        mAlarmInstance = AlarmInstance.getInstance(getContentResolver(), instanceId);
+        if (mAlarmInstance == null) {
             // The alarm got deleted before the activity got created, so just finish()
             LogUtils.e(LOGTAG, "Error displaying alarm for intent: %s", getIntent());
             finish();
             return;
+        } else if (mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
+            LogUtils.i(LOGTAG, "Skip displaying alarm for instance: %s", mAlarmInstance);
+            finish();
+            return;
         }
+
+        LogUtils.i(LOGTAG, "Displaying alarm for instance: %s", mAlarmInstance);
 
         // Get the volume/camera button behavior setting
         mVolumeBehavior = PreferenceManager.getDefaultSharedPreferences(this)
                 .getString(SettingsActivity.KEY_VOLUME_BEHAVIOR,
                         SettingsActivity.DEFAULT_VOLUME_BEHAVIOR);
 
-        if (mIsAlarmBoot) {
-            getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
-        }
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
 
         // In order to allow tablets to freely rotate and phones to stick
         // with "nosensor" (use default device orientation) we have to have
@@ -257,9 +182,9 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
         mAlertInfoView = (TextView) mAlertView.findViewById(R.id.alert_info);
 
         mContentView = (ViewGroup) mContainerView.findViewById(R.id.content);
-        mAlarmButton = (ImageButton) mContentView.findViewById(R.id.alarm);
-        mSnoozeButton = (ImageButton) mContentView.findViewById(R.id.snooze);
-        mDismissButton = (ImageButton) mContentView.findViewById(R.id.dismiss);
+        mAlarmButton = (ImageView) mContentView.findViewById(R.id.alarm);
+        mSnoozeButton = (ImageView) mContentView.findViewById(R.id.snooze);
+        mDismissButton = (ImageView) mContentView.findViewById(R.id.dismiss);
         mHintView = (TextView) mContentView.findViewById(R.id.hint);
 
         final TextView titleView = (TextView) mContentView.findViewById(R.id.title);
@@ -297,36 +222,15 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
         filter.addAction(ALARM_SNOOZE_ACTION);
         filter.addAction(ALARM_DISMISS_ACTION);
         registerReceiver(mReceiver, filter);
-
-        if (mAlarmInstance != null && mIsAlarmBoot) {
-            AlarmService.startAlarm(getApplicationContext(), mAlarmInstance);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        LogUtils.d(LOGTAG, "onPause mIsAlarmBoot = " + mIsAlarmBoot);
-
-        if (mIsAlarmBoot) {
-            Settings.System.putString(mContext.getContentResolver(), POWER_OFF_ALARM_MODE, "false");
-            mIsAlarmBoot = false;
-
-            // Boot alarm should not pause, or else need to finish.
-            if (!mIsPowerOffing) {
-                finish();
-            }
-        }
+        mReceiverRegistered = true;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        LogUtils.d(LOGTAG, "onDestroy mIsAlarmBoot =" + mIsAlarmBoot);
 
-        // If the alarm instance is null the receiver was never registered and calling
-        // unregisterReceiver will throw an exception.
-        if (mAlarmInstance != null) {
+        // Skip if register didn't happen to avoid IllegalArgumentException
+        if (mReceiverRegistered) {
             unregisterReceiver(mReceiver);
         }
     }
@@ -447,27 +351,20 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     }
 
     private void snooze() {
-        if (mIsAlarmBoot) {
-            LogUtils.v(LOGTAG, "Alarm boot snooze function call updateAirplaneMode "
-                    + "mDefaultAirplaneMode = " + mDefaultAirplaneMode);
-
-            updateAirplaneMode(mDefaultAirplaneMode);
-
-            try {
-                Thread.sleep(1000); // waiting sticky broadcast is delivered complete
-            } catch (InterruptedException ie) {
-                ie.printStackTrace();
-            }
-        }
-        mIsSoonze = true;
-
         mAlarmHandled = true;
         LogUtils.v(LOGTAG, "Snoozed: %s", mAlarmInstance);
 
         final int alertColor = getResources().getColor(R.color.hot_pink);
         setAnimatedFractions(1.0f /* snoozeFraction */, 0.0f /* dismissFraction */);
-        getAlertAnimator(mSnoozeButton, R.string.alarm_alert_snoozed_text,
-                AlarmStateManager.getSnoozedMinutes(this), alertColor, alertColor).start();
+
+        final int snoozeMinutes = AlarmStateManager.getSnoozedMinutes(this);
+        final String infoText = getResources().getQuantityString(
+                R.plurals.alarm_alert_snooze_duration, snoozeMinutes, snoozeMinutes);
+        final String accessibilityText = getResources().getQuantityString(
+                R.plurals.alarm_alert_snooze_set, snoozeMinutes, snoozeMinutes);
+
+        getAlertAnimator(mSnoozeButton, R.string.alarm_alert_snoozed_text, infoText,
+                accessibilityText, alertColor, alertColor).start();
         AlarmStateManager.setSnoozeState(this, mAlarmInstance, false /* showToast */);
     }
 
@@ -477,27 +374,23 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
 
         setAnimatedFractions(0.0f /* snoozeFraction */, 1.0f /* dismissFraction */);
         getAlertAnimator(mDismissButton, R.string.alarm_alert_off_text, null /* infoText */,
+                getString(R.string.alarm_alert_off_text) /* accessibilityText */,
                 Color.WHITE, mCurrentHourColor).start();
         AlarmStateManager.setDismissState(this, mAlarmInstance);
-
-        AlarmStateManager.isPowerOffAlarm(mContext);
-        if (mIsAlarmBoot) {
-            showPowerOffDialog();
-        }
     }
 
     private void setAnimatedFractions(float snoozeFraction, float dismissFraction) {
         final float alarmFraction = Math.max(snoozeFraction, dismissFraction);
-        AnimatorUtils.setAnimatedFraction(mAlarmAnimator, alarmFraction);
-        AnimatorUtils.setAnimatedFraction(mSnoozeAnimator, snoozeFraction);
-        AnimatorUtils.setAnimatedFraction(mDismissAnimator, dismissFraction);
+        mAlarmAnimator.setCurrentFraction(alarmFraction);
+        mSnoozeAnimator.setCurrentFraction(snoozeFraction);
+        mDismissAnimator.setCurrentFraction(dismissFraction);
     }
 
     private float getFraction(float x0, float x1, float x) {
         return Math.max(Math.min((x - x0) / (x1 - x0), 1.0f), 0.0f);
     }
 
-    private ValueAnimator getButtonAnimator(ImageButton button, int tintColor) {
+    private ValueAnimator getButtonAnimator(ImageView button, int tintColor) {
         return ObjectAnimator.ofPropertyValuesHolder(button,
                 PropertyValuesHolder.ofFloat(View.SCALE_X, BUTTON_SCALE_DEFAULT, 1.0f),
                 PropertyValuesHolder.ofFloat(View.SCALE_Y, BUTTON_SCALE_DEFAULT, 1.0f),
@@ -527,7 +420,8 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
     }
 
     private Animator getAlertAnimator(final View source, final int titleResId,
-            final String infoText, final int revealColor, final int backgroundColor) {
+            final String infoText, final String accessibilityText, final int revealColor,
+            final int backgroundColor) {
         final ViewGroupOverlay overlay = mContainerView.getOverlay();
 
         // Create a transient view for performing the reveal animation.
@@ -568,10 +462,12 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
             public void onAnimationEnd(Animator animator) {
                 mAlertView.setVisibility(View.VISIBLE);
                 mAlertTitleView.setText(titleResId);
+
                 if (infoText != null) {
                     mAlertInfoView.setText(infoText);
                     mAlertInfoView.setVisibility(View.VISIBLE);
                 }
+                mAlertView.announceForAccessibility(accessibilityText);
                 mContentView.setVisibility(View.GONE);
                 mContainerView.setBackgroundColor(backgroundColor);
             }
@@ -594,104 +490,12 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        if ((!mIsAlarmBoot && !mIsPowerOffing) || mIsSoonze) {
-                            finish();
-                        }
+                        finish();
                     }
                 }, ALERT_DISMISS_DELAY_MILLIS);
             }
         });
 
         return alertAnimator;
-    }
-
-    /**
-     * Implement power off function immediately.
-     */
-    private void powerOff() {
-        Intent requestShutdown = new Intent(Intent.ACTION_REQUEST_SHUTDOWN);
-        requestShutdown.putExtra(Intent.EXTRA_KEY_CONFIRM, false);
-        requestShutdown.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        mContext.startActivity(requestShutdown);
-    }
-
-    private void showPowerOffDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(R.string.power_on_text)
-               .setTitle(R.string.alarm_list_title);
-        builder.setPositiveButton(R.string.power_on_yes_text,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (mIsAlarmBoot) {
-                            LogUtils.v(LOGTAG, "AlarmBoot showPowerOffDialog"
-                                    + " mDefaultAirplaneMode = " + mDefaultAirplaneMode);
-                            updateAirplaneMode(mDefaultAirplaneMode);
-                        }
-
-                        try {
-                            Thread.sleep(1000); // waiting sticky broadcast is delivered complete
-                        } catch (InterruptedException ie) {
-                            ie.printStackTrace();
-                        }
-
-                        mBootHandler.sendEmptyMessage(SHUTDOWN_ALARM_VIEW);
-                    }
-                });
-        builder.setNegativeButton(R.string.power_on_no_text,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        LogUtils.v(LOGTAG, "AlarmBoot showPowerOffDialog power off"
-                                + " updateAirplaneMode = " + mDefaultAirplaneMode);
-                        mIsPowerOffing = true;
-                        updateAirplaneMode(mDefaultAirplaneMode);
-
-                        try {
-                            Thread.sleep(1000); // waiting sticky broadcast is delivered complete
-                        } catch (InterruptedException ie) {
-                            ie.printStackTrace();
-                        }
-
-                        mBootHandler.sendEmptyMessage(SHUTDOWN_POWER_OFF);
-                    }
-                });
-
-        AlertDialog dialog = builder.create();
-        dialog.setCancelable(false);
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_FULLSCREEN |
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
-        dialog.show();
-    }
-
-    /**
-     * Enable/Disable airplane mode
-     */
-    private void updateAirplaneMode(int newState) {
-        LogUtils.v(LOGTAG, "AlarmBoot updateAirplaneMode newState = " + newState);
-
-        int oldState = Settings.Global.getInt(mContext.getContentResolver(),
-                Settings.Global.AIRPLANE_MODE_ON, 0);
-        LogUtils.v(LOGTAG, "AlarmBoot updateAirplaneMode oldState = " + oldState);
-
-        if (oldState == newState) return; // no need to update
-
-        Settings.Global.putInt(mContext.getContentResolver(),
-                Settings.Global.AIRPLANE_MODE_ON, newState);
-
-        if (newState == AIRPLANE_ON) return; // don't want to update system UI airplane mode
-
-        LogUtils.v(LOGTAG, "AlarmBoot updateAirplaneMode airplane mode newState = " + newState);
-
-        // broadcast the airplane mode change
-        Intent intent = new Intent(ACTION_SETTING_AIRPLANE_MODE_CHANGED);
-        intent.putExtra("state", newState == AIRPLANE_ON ? true : false);
-        mContext.sendStickyBroadcast(intent);
     }
 }

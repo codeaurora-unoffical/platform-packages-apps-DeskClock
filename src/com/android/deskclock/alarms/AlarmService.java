@@ -62,8 +62,6 @@ public class AlarmService extends Service {
     // default action for flip and shake
     private static final String DEFAULT_ACTION = "0";
 
-    private static final String FULL_SCREEN_FLAG = "fullscreen_activity";
-
     // constants for no action/snooze/dismiss
     private static final int ALARM_NO_ACTION = 0;
     private static final int ALARM_SNOOZE = 1;
@@ -174,22 +172,20 @@ public class AlarmService extends Service {
         AlarmAlertWakeLock.acquireCpuWakeLock(this);
         mCurrentAlarm = instance;
 
-        if (!AlarmActivity.mIsAlarmBoot) {
-            switch (mVolumeBehavior) {
-                case SettingsActivity.VOLUME_BEHAVIOR_SNOOZE:
-                case SettingsActivity.VOLUME_BEHAVIOR_DISMISS:
-                    Intent fullScreenIntent = AlarmInstance.createIntent(this, AlarmActivity.class,
-                            instance.mId);
-                    // set action, so we can be different then content pending intent
-                    fullScreenIntent.setAction(FULL_SCREEN_FLAG);
-                    fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                            Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-                    startActivity(fullScreenIntent);
-                    break;
-                default:
-                    AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
-                    break;
-            }
+        switch (mVolumeBehavior) {
+            case SettingsActivity.VOLUME_BEHAVIOR_SNOOZE:
+            case SettingsActivity.VOLUME_BEHAVIOR_DISMISS:
+                Intent fullScreenIntent = AlarmInstance.createIntent(this, AlarmActivity.class,
+                        instance.mId);
+                // set action, so we can be different then content pending intent
+                fullScreenIntent.setAction("fullscreen_activity");
+                fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+                startActivity(fullScreenIntent);
+                break;
+            default:
+                AlarmNotifications.showAlarmNotification(this, mCurrentAlarm);
+                break;
         }
 
         mInitialCallState = mTelephonyManager.getCallState();
@@ -202,11 +198,12 @@ public class AlarmService extends Service {
     }
 
     private void stopCurrentAlarm() {
-        if (mCurrentAlarm == null && !AlarmActivity.mIsAlarmBoot) {
+        if (mCurrentAlarm == null) {
             LogUtils.v("There is no current alarm to stop");
             return;
         }
 
+        LogUtils.v("AlarmService.stop with instance: " + mCurrentAlarm.mId);
         AlarmKlaxon.stop(this);
         mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
         sendBroadcast(new Intent(ALARM_DONE_ACTION));

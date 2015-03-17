@@ -21,8 +21,7 @@
     android:layout_width="match_parent"
     android:layout_height="64dp"
     internal:layout_maxHeight="64dp"
-    internal:layout_minHeight="64dp"
-    android:background="@color/notification_material_background_low_priority_color" >
+    internal:layout_minHeight="64dp" >
 
     <include layout="@layout/stopwatch_notification_icon"/>
 

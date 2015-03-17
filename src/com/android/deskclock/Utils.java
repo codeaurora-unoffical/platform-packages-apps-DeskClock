@@ -42,7 +42,6 @@ import android.os.SystemProperties;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract.Document;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -52,7 +51,6 @@ import android.text.format.Time;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
-import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
@@ -265,13 +263,6 @@ public class Utils {
         Intent timerIntent = new Intent();
         timerIntent.setAction(Timers.NOTIF_TIMES_UP_CANCEL);
         context.sendBroadcast(timerIntent);
-    }
-
-    public static void setTimeTextSize(TextClock textClock, int res_id) {
-        if (!DateFormat.is24HourFormat(textClock.getContext())) {
-            textClock.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                    textClock.getContext().getResources().getDimensionPixelSize(res_id));
-        }
     }
 
     /** Runnable for use with screensaver and dream, to move the clock every minute.
@@ -617,13 +608,6 @@ public class Utils {
             tempList.add(city);
         }
 
-        // Sort alphabetically
-        Collections.sort(tempList, new Comparator<CityObj> () {
-            @Override
-            public int compare(CityObj c1, CityObj c2) {
-                return collator.compare(c1.mCityName, c2.mCityName);
-            }
-        });
         return tempList.toArray(new CityObj[tempList.size()]);
     }
 
@@ -687,12 +671,22 @@ public class Utils {
         return sShortWeekdays;
     }
 
+    public static String getTitleColumnNameForUri(Uri uri) {
+        if (uri.isPathPrefixMatch(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI)) {
+            return MediaStore.Audio.Playlists.NAME;
+        }
+        if (DOC_EXTERNAL.equals(uri.getAuthority())) {
+            return Document.COLUMN_DISPLAY_NAME;
+        }
+        return MediaStore.Audio.Media.TITLE;
+    }
+
     public static boolean isRingToneUriValid(Context context, Uri uri) {
         if (uri == null) {
             return false;
         }
 
-        if (uri.equals(AlarmMediaPlayer.RANDOM_URI) || uri.equals(Alarm.NO_RINGTONE_URI)) {
+        if (uri.equals(AlarmMultiPlayer.RANDOM_URI) || uri.equals(Alarm.NO_RINGTONE_URI)) {
             return true;
         } else if (uri.getScheme().contentEquals("file")) {
             File f = new File(uri.getPath());
@@ -703,7 +697,7 @@ public class Utils {
             Cursor cursor = null;
             try {
                 cursor = context.getContentResolver().query(uri,
-                        new String[] {MediaStore.Audio.Media.TITLE}, null, null, null);
+                        new String[] {getTitleColumnNameForUri(uri)}, null, null, null);
                 if (cursor != null && cursor.getCount() > 0) {
                     return true;
                 }
