@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) 2014, The Linux Foundation. All rights reserved.
-     Not a Contribution.
-
-     Copyright (C) 2007 The Android Open Source Project
+<!-- Copyright (C) 2007 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -252,29 +249,27 @@
     <!-- Auto silence summary when turned off -->
     <string name="auto_silence_never">Never</string>
 
-    <string name="default_auto_silence_value">10</string>
-
     <!-- Entries listed in the ListPreference when invoking the auto silence
          preference. -->
     <string-array name="auto_silence_entries">
+      <item>1 minute</item>
       <item>5 minutes</item>
       <item>10 minutes</item>
       <item>15 minutes</item>
       <item>20 minutes</item>
       <item>25 minutes</item>
-      <item>30 minutes</item>
       <item>Never</item>
       </string-array>
 
     <!-- Values that are retrieved from the ListPreference. These must match
          the auto_silence_entries above. -->
     <string-array name="auto_silence_values" translatable="false">
+      <item>1</item>
       <item>5</item>
       <item>10</item>
       <item>15</item>
       <item>20</item>
       <item>25</item>
-      <item>30</item>
       <item>-1</item> <!-- Off -->
       </string-array>
 
@@ -337,9 +332,6 @@
     <!-- Accessibility labels for alarm buttons -->
     <string name="label_description">Label</string>
     <string name="ringtone_description">Ringtone</string>
-
-    <!-- A short representation of charging information, e.g "34%" -->
-    <string name="battery_charging_level"><xliff:g id="number">%d</xliff:g><xliff:g id="percent">%%</xliff:g></string>
 
     <!-- What to show the user if the weather widget exists but fails to
          respond. This is a sign of an error; if the weather widget is not
@@ -811,16 +803,6 @@
     <string name="alarm_undo">undo</string>
     <!-- Toast content when an alarm was deleted  -->
     <string name="alarm_deleted">Alarm deleted.</string>
-    <!-- Select the source of the alarm -->
-    <string name="alarm_select">Select Alarm</string>
-    <!-- Select the ringtone as alarm -->
-    <string name="alarm_select_ringtone">Ringtone</string>
-    <!-- Select the alarm from external device -->
-    <string name="alarm_select_external">Music</string>
-    <!-- Ok for selection -->
-    <string name="alarm_select_ok">OK</string>
-    <!-- Cancel for selection -->
-    <string name="alarm_select_cancel">Cancel</string>
     <!-- slash between date and next alarm in the clock -->
     <string name="slash"> / </string>
     <!-- slash between date and next alarm in the clock -->

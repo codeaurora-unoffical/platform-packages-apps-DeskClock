@@ -66,7 +66,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver;
@@ -561,6 +560,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     RingtoneManager.TYPE_ALARM);
             intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
                     false);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_DIALOG_THEME,
+                    android.R.style.Theme_Material_Dialog);
             AlarmClockFragment.this.startActivityForResult(intent, REQUEST_CODE_RINGTONE);
         } else {
             final Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -568,29 +569,6 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     AlarmClockFragment.this.mSelectedAlarm.alert);
             intent.setType(SEL_AUDIO_SRC);
             AlarmClockFragment.this.startActivityForResult(intent, REQUEST_CODE_EXTERN_AUDIO);
-        }
-    }
-
-    private class RingTonePickerDialogListener implements DialogInterface.OnClickListener {
-        private AlarmClockFragment alarm;
-
-        public RingTonePickerDialogListener(AlarmClockFragment clock) {
-            alarm = clock;
-        }
-
-        public void onClick(DialogInterface dialog, int which) {
-            switch (which) {
-                case SEL_SRC_RINGTONE:
-                case SEL_SRC_EXTERNAL:
-                    alarm.mSelectSource = which;
-                    break;
-                case DialogInterface.BUTTON_POSITIVE:
-                    alarm.sendPickIntent();
-                case DialogInterface.BUTTON_NEGATIVE:
-                default:
-                    dialog.dismiss();
-                    break;
-            }
         }
     }
 
@@ -604,13 +582,20 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
-                            case 0:
-                                launchSingleRingTonePicker(alarm);
+                            case SEL_SRC_RINGTONE: //0
+                                AlarmClockFragment.this.mSelectSource = which;
+                                AlarmClockFragment.this.mSelectedAlarm = alarm;
+                                AlarmClockFragment.this.sendPickIntent();
                                 break;
-                            case 1:
-                                launchSinglePlaylistPicker(alarm);
+                            case SEL_SRC_EXTERNAL: //1
+                                AlarmClockFragment.this.mSelectSource = which;
+                                AlarmClockFragment.this.mSelectedAlarm = alarm;
+                                AlarmClockFragment.this.sendPickIntent();
                                 break;
                             case 2:
+                                launchSinglePlaylistPicker(alarm);
+                                break;
+                            case 3:
                                 alarm.alert = AlarmMultiPlayer.RANDOM_URI;
                                 asyncUpdateAlarm(alarm, false);
                                 break;
@@ -650,23 +635,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
                         cursorAdapter.changeCursor(null);
                     }
                 })
-                .setNegativeButton(R.string.alarm_select_cancel, null)
-                .show();
-    }
-
-    private void launchSingleRingTonePicker(Alarm alarm) {
-        mSelectedAlarm = alarm;
-        RingTonePickerDialogListener listener = new RingTonePickerDialogListener(this);
-        new AlertDialog.Builder(getActivity())
-                .setTitle(getResources().getString(R.string.alarm_select))
-                .setSingleChoiceItems(
-                        new String[] {
-                                getResources().getString(R.string.alarm_select_ringtone),
-                                getResources().getString(R.string.alarm_select_external) },
-                        mSelectSource, listener)
-                .setPositiveButton(getResources().getString(R.string.alarm_select_ok),listener)
-                .setNegativeButton(getResources().getString(
-                        R.string.alarm_select_cancel),listener)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
@@ -1027,16 +996,18 @@ public class AlarmClockFragment extends DeskClockFragment implements
 
             final CompoundButton.OnCheckedChangeListener onOffListener =
                     new CompoundButton.OnCheckedChangeListener() {
-                        @Override
-                        public void onCheckedChanged(CompoundButton compoundButton,
-                                                     boolean checked) {
-                            if (checked != alarm.enabled) {
-                                setDigitalTimeAlpha(itemHolder, checked);
-                                alarm.enabled = checked;
-                                asyncUpdateAlarm(alarm, alarm.enabled);
-                            }
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    if (checked != alarm.enabled) {
+                        if (!isAlarmExpanded(alarm)) {
+                            // Only toggle this when alarm is collapsed
+                            setDigitalTimeAlpha(itemHolder, checked);
                         }
-                    };
+                        alarm.enabled = checked;
+                        asyncUpdateAlarm(alarm, alarm.enabled);
+                    }
+                }
+            };
 
             if (mRepeatChecked.contains(alarm.id) || itemHolder.alarm.daysOfWeek.isRepeating()) {
                 itemHolder.tomorrowLabel.setVisibility(View.GONE);
@@ -1059,6 +1030,21 @@ public class AlarmClockFragment extends DeskClockFragment implements
             itemHolder.summary.setVisibility(expanded? View.GONE : View.VISIBLE);
             itemHolder.hairLine.setVisibility(expanded ? View.GONE : View.VISIBLE);
             itemHolder.arrow.setRotation(expanded ? ROTATE_180_DEGREE : 0);
+
+            // Add listener on the arrow to enable proper talkback functionality.
+            // Avoid setting content description on the entire card.
+            itemHolder.arrow.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (isAlarmExpanded(alarm)) {
+                        // Is expanded, make collapse call.
+                        collapseAlarm(itemHolder, true);
+                    } else {
+                        // Is collapsed, make expand call.
+                        expandAlarm(itemHolder, true);
+                    }
+                }
+            });
 
             // Set the repeat text or leave it blank if it does not repeat.
             final String daysOfWeekStr =
@@ -1147,7 +1133,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
             final int alarmHour = alarm.hour;
             final int currHour = now.get(Calendar.HOUR_OF_DAY);
             return alarmHour < currHour ||
-                    (alarmHour == currHour && alarm.minutes < now.get(Calendar.MINUTE));
+                        (alarmHour == currHour && alarm.minutes <= now.get(Calendar.MINUTE));
         }
 
         private void bindExpandArea(final ItemHolder itemHolder, final Alarm alarm) {
@@ -1292,14 +1278,11 @@ public class AlarmClockFragment extends DeskClockFragment implements
 
             itemHolder.increasingVolume.setVisibility(View.VISIBLE);
             itemHolder.increasingVolume.setChecked(alarm.increasingVolume);
-            itemHolder.increasingVolume.setTextColor(
-                    alarm.increasingVolume ? mColorLit : mColorDim);
             itemHolder.increasingVolume.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     final boolean checked = ((CheckBox) v).isChecked();
                     //When action mode is on - simulate long click
-                    itemHolder.increasingVolume.setTextColor(checked ? mColorLit : mColorDim);
                     alarm.increasingVolume = checked;
                     asyncUpdateAlarm(alarm, false);
                 }
@@ -1319,7 +1302,8 @@ public class AlarmClockFragment extends DeskClockFragment implements
         }
 
         // Sets the alpha of the digital time display. This gives a visual effect
-        // for enabled/disabled alarm while leaving the on/off switch more visible
+        // for enabled/disabled and expanded/collapsed alarm while leaving the
+        // on/off switch more visible
         private void setDigitalTimeAlpha(ItemHolder holder, boolean enabled) {
             float alpha = enabled ? 1f : 0.69f;
             holder.clock.setAlpha(alpha);
@@ -1334,30 +1318,6 @@ public class AlarmClockFragment extends DeskClockFragment implements
                     turnOffDayOfWeek(holder, i);
                 }
             }
-        }
-
-        public void toggleSelectState(View v) {
-            // long press could be on the parent view or one of its childs, so find the parent view
-            v = getTopParent(v);
-            if (v != null) {
-                long id = ((ItemHolder)v.getTag()).alarm.id;
-                if (mSelectedAlarms.contains(id)) {
-                    mSelectedAlarms.remove(id);
-                } else {
-                    mSelectedAlarms.add(id);
-                }
-            }
-        }
-
-        private View getTopParent(View v) {
-            while (v != null && v.getId() != R.id.alarm_item) {
-                v = (View) v.getParent();
-            }
-            return v;
-        }
-
-        public int getSelectedItemsNum() {
-            return mSelectedAlarms.size();
         }
 
         private void turnOffDayOfWeek(ItemHolder holder, int dayIndex) {
@@ -1423,7 +1383,7 @@ public class AlarmClockFragment extends DeskClockFragment implements
             if (uri.getAuthority().equals(Utils.DOC_DOWNLOAD)) {
                 final String id = DocumentsContract.getDocumentId(uri);
                 uri = ContentUris.withAppendedId(
-                        Uri.parse(DOWNLOAD_CONTENT), Long.valueOf(id));
+                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
             } else if (uri.getAuthority().equals(Utils.DOC_AUTHORITY)) {
                 final String docId = DocumentsContract.getDocumentId(uri);
                 final String[] split = docId.split(COLON);
@@ -1488,6 +1448,10 @@ public class AlarmClockFragment extends DeskClockFragment implements
             setAlarmItemBackgroundAndElevation(itemHolder.alarmItem, true /* expanded */);
             itemHolder.expandArea.setVisibility(View.VISIBLE);
             itemHolder.delete.setVisibility(View.VISIBLE);
+            // Show digital time in full-opaque when expanded, even when alarm is disabled
+            setDigitalTimeAlpha(itemHolder, true /* enabled */);
+
+            itemHolder.arrow.setContentDescription(getString(R.string.collapse_alarm));
 
             if (!animate) {
                 // Set the "end" layout and don't do the animation.
@@ -1600,6 +1564,9 @@ public class AlarmClockFragment extends DeskClockFragment implements
             // Set the expand area to gone so we can measure the height to animate to.
             setAlarmItemBackgroundAndElevation(itemHolder.alarmItem, false /* expanded */);
             itemHolder.expandArea.setVisibility(View.GONE);
+            setDigitalTimeAlpha(itemHolder, itemHolder.onoff.isChecked());
+
+            itemHolder.arrow.setContentDescription(getString(R.string.expand_alarm));
 
             if (!animate) {
                 // Set the "end" layout and don't do the animation.
