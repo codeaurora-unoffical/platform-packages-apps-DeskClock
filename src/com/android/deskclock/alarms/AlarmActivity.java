@@ -321,6 +321,12 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
 
             // Boot alarm should not pause, or else need to finish.
             if (!mIsPowerOffing) {
+                if (!mAlarmHandled) {
+                    LogUtils.d(LOGTAG, "onPause setSnoozeState = " + mAlarmInstance);
+                    AlarmStateManager.setSnoozeState(this, mAlarmInstance, false /* showToast */);
+                    AlarmStateManager.isPowerOffAlarm(mContext);
+                }
+                updateAirplaneMode(mDefaultAirplaneMode);
                 finish();
             }
         }
