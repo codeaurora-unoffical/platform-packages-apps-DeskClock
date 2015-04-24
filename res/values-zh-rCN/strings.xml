@@ -347,4 +347,6 @@
     <string name="no_upcoming_alarms" msgid="2889840988069436254">"没有预定的闹钟"</string>
     <string name="ringtone_default">"默认铃声"</string>
     <string name="power_on_text">"开机"</string>
+    <string name="power_on_yes_text">"是"</string>
+    <string name="power_on_no_text">"否"</string>
 </resources>
