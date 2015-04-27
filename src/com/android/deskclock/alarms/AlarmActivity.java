@@ -211,7 +211,7 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
 
         if (mAlarmInstance != null) {
             LogUtils.i(LOGTAG, "Displaying alarm for instance: %s", mAlarmInstance);
-        } else if (mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
+        } else if (!mIsAlarmBoot && mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
             LogUtils.i(LOGTAG, "Skip displaying alarm for instance: %s", mAlarmInstance);
             finish();
             return;
@@ -321,6 +321,12 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
 
             // Boot alarm should not pause, or else need to finish.
             if (!mIsPowerOffing) {
+                if (!mAlarmHandled) {
+                    LogUtils.d(LOGTAG, "onPause setSnoozeState = " + mAlarmInstance);
+                    AlarmStateManager.setSnoozeState(this, mAlarmInstance, false /* showToast */);
+                    AlarmStateManager.isPowerOffAlarm(mContext);
+                }
+                updateAirplaneMode(mDefaultAirplaneMode);
                 finish();
             }
         }
