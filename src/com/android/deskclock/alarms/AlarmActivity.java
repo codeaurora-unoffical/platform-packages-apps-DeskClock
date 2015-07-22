@@ -327,6 +327,13 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
                     AlarmStateManager.isPowerOffAlarm(mContext);
                 }
                 updateAirplaneMode(mDefaultAirplaneMode);
+
+                try {
+                    Thread.sleep(1000); // waiting broadcast is delivered complete
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+
                 finish();
             }
         }
@@ -711,11 +718,23 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
 
         if (newState == AIRPLANE_ON) return; // don't want to update system UI airplane mode
 
+        // wait for airplane mode to change state
+        while (Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, -1) != 0) {
+            LogUtils.v(LOGTAG, "AlarmBoot updateAirplaneMode waiting update to 0 ");
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+            }
+        }
+
         LogUtils.v(LOGTAG, "AlarmBoot updateAirplaneMode airplane mode newState = " + newState);
 
         // broadcast the airplane mode change
         Intent intent = new Intent(ACTION_SETTING_AIRPLANE_MODE_CHANGED);
         intent.putExtra("state", newState == AIRPLANE_ON ? true : false);
-        mContext.sendStickyBroadcast(intent);
+        mContext.sendBroadcast(intent);
     }
 }
