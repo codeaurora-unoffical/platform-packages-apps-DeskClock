@@ -615,28 +615,36 @@ public class AlarmClockFragment extends DeskClockFragment implements
                 MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
                 projection, null, null, null);
 
-        final CursorAdapter cursorAdapter
-                = new SimpleCursorAdapter(context, android.R.layout.simple_list_item_1, c,
-                new String[] {MediaStore.Audio.Playlists.NAME}, new int[]{android.R.id.text1}, 0);
+        if (c != null && c.getCount() > 0) {
+            final CursorAdapter cursorAdapter = new SimpleCursorAdapter(
+                    context, android.R.layout.simple_list_item_1, c,
+                    new String[] {MediaStore.Audio.Playlists.NAME},
+                    new int[] {android.R.id.text1}, 0);
 
-        new AlertDialog.Builder(context).setSingleChoiceItems(cursorAdapter, 0,
+            new AlertDialog.Builder(context)
+                    .setSingleChoiceItems(cursorAdapter, 0,
 
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Cursor c = (Cursor) cursorAdapter.getItem(which);
-                        if (c != null) {
-                            alarm.alert = Uri.withAppendedPath(
-                                    MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
-                                    String.valueOf(c.getLong(0)));
-                            asyncUpdateAlarm(alarm, false);
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Cursor c = (Cursor) cursorAdapter.getItem(which);
+                            if (c != null) {
+                                alarm.alert = Uri
+                                        .withAppendedPath(
+                                                MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+                                                String.valueOf(c.getLong(0)));
+                                asyncUpdateAlarm(alarm, false);
+                            }
+                            dialog.dismiss();
+                            cursorAdapter.changeCursor(null);
                         }
-                        dialog.dismiss();
-                        cursorAdapter.changeCursor(null);
-                    }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+                    }).setNegativeButton(android.R.string.cancel, null).show();
+        } else {
+            Toast toast = Toast.makeText(context, R.string.playlist_empty,
+                    Toast.LENGTH_LONG);
+            ToastMaster.setToast(toast);
+            toast.show();
+        }
     }
 
     private void launchProfilePicker(Alarm alarm) {
