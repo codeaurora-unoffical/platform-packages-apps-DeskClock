@@ -23,9 +23,11 @@ import android.animation.PropertyValuesHolder;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -33,11 +35,15 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v4.view.animation.PathInterpolatorCompat;
@@ -66,6 +72,11 @@ public class AlarmActivity extends AppCompatActivity
 
     private static final String LOGTAG = AlarmActivity.class.getSimpleName();
 
+    private static final String POWER_OFF_ALARM_MODE = "power_off_alarm_mode";
+
+    private static final String ACTION_POWER_OFF_ALARM =
+            "org.codeaurora.alarm.action.POWER_OFF_ALARM";
+
     private static final TimeInterpolator PULSE_INTERPOLATOR =
             PathInterpolatorCompat.create(0.4f, 0.0f, 0.2f, 1.0f);
     private static final TimeInterpolator REVEAL_INTERPOLATOR =
@@ -79,6 +90,37 @@ public class AlarmActivity extends AppCompatActivity
 
     private static final float BUTTON_SCALE_DEFAULT = 0.7f;
     private static final int BUTTON_DRAWABLE_ALPHA_DEFAULT = 165;
+
+    public static boolean mIsPowerOffAlarm = false;
+
+    private static final int POWER_OFF_ALARM_MODE_ON = 1;
+    private static final int POWER_OFF_ALARM_MODE_OFF = 0;
+
+    private static final int SHUTDOWN_ALARM_VIEW = 1;
+    private static final int SHUTDOWN_POWER_OFF = 2;
+
+    private Context mContext;
+
+    private Handler mBootHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch(msg.what) {
+                case SHUTDOWN_ALARM_VIEW:
+                    LogUtils.v(LOGTAG, "SHUTDOWN_ALARM_VIEW finish");
+                    setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_OFF, mContext);
+                    finish();
+                    break;
+
+                case SHUTDOWN_POWER_OFF:
+                    LogUtils.v(LOGTAG, "SHUTDOWN_POWER_OFF directly power off");
+                    setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_OFF, mContext);
+                    powerOff();
+                    break;
+
+                default:// normally will not go here
+            }
+        }
+    };
 
     private final Handler mHandler = new Handler();
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -96,7 +138,9 @@ public class AlarmActivity extends AppCompatActivity
                         dismiss();
                         break;
                     case AlarmService.ALARM_DONE_ACTION:
-                        finish();
+                        if (!mIsPowerOffAlarm) {
+                            finish();
+                        }
                         break;
                     default:
                         LogUtils.i(LOGTAG, "Unknown broadcast: %s", action);
@@ -149,14 +193,28 @@ public class AlarmActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        final long instanceId = AlarmInstance.getId(getIntent().getData());
-        mAlarmInstance = AlarmInstance.getInstance(getContentResolver(), instanceId);
+        Uri intentData = getIntent().getData();
+        String intentAction = getIntent().getAction();
+
+        mContext = getApplicationContext();
+
+        if (intentAction == ACTION_POWER_OFF_ALARM) {
+            setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_ON, mContext);
+        }
+
+        if (mIsPowerOffAlarm) {
+            mAlarmInstance = AlarmInstance.getFirstAlarmInstance(mContext.getContentResolver());
+        } else if (intentData != null) {
+            long instanceId = AlarmInstance.getId(intentData);
+            mAlarmInstance = AlarmInstance.getInstance(this.getContentResolver(), instanceId);
+        }
+
         if (mAlarmInstance == null) {
             // The alarm was deleted before the activity got created, so just finish()
             LogUtils.e(LOGTAG, "Error displaying alarm for intent: %s", getIntent());
             finish();
             return;
-        } else if (mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
+        } else if (!mIsPowerOffAlarm && mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
             LogUtils.i(LOGTAG, "Skip displaying alarm for instance: %s", mAlarmInstance);
             finish();
             return;
@@ -169,11 +227,21 @@ public class AlarmActivity extends AppCompatActivity
                 .getString(SettingsActivity.KEY_VOLUME_BEHAVIOR,
                         SettingsActivity.DEFAULT_VOLUME_BEHAVIOR);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+        if (mIsPowerOffAlarm) {
+            getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+        }
 
         // Hide navigation bar to minimize accidental tap on Home key
         hideNavigationBar();
@@ -231,6 +299,10 @@ public class AlarmActivity extends AppCompatActivity
         mPulseAnimator.setInterpolator(PULSE_INTERPOLATOR);
         mPulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
         mPulseAnimator.start();
+
+        if (mAlarmInstance != null && mIsPowerOffAlarm) {
+            AlarmStateManager.setFiredState(getApplicationContext(), mAlarmInstance);
+        }
     }
 
     @Override
@@ -246,21 +318,18 @@ public class AlarmActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
-        // Re-query for AlarmInstance in case the state has changed externally
-        final long instanceId = AlarmInstance.getId(getIntent().getData());
-        mAlarmInstance = AlarmInstance.getInstance(getContentResolver(), instanceId);
+        Uri intentData = getIntent().getData();
+        if(intentData != null) {
+            // Re-query for AlarmInstance in case the state has changed externally
+            final long instanceId = AlarmInstance.getId(intentData);
+            mAlarmInstance = AlarmInstance.getInstance(getContentResolver(), instanceId);
 
-        if (mAlarmInstance == null) {
-            LogUtils.i(LOGTAG, "No alarm instance for instanceId: %d", instanceId);
-            finish();
-            return;
-        }
-
-        // Verify that the alarm is still firing before showing the activity
-        if (mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
-            LogUtils.i(LOGTAG, "Skip displaying alarm for instance: %s", mAlarmInstance);
-            finish();
-            return;
+            if (mAlarmInstance == null ||
+                        mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
+                LogUtils.i(LOGTAG, "Skip displaying alarm for instanceId: %d", instanceId);
+                finish();
+                return;
+            }
         }
 
         if (!mReceiverRegistered) {
@@ -285,6 +354,18 @@ public class AlarmActivity extends AppCompatActivity
         if (mReceiverRegistered) {
             unregisterReceiver(mReceiver);
             mReceiverRegistered = false;
+        }
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mIsPowerOffAlarm && mAlarmInstance != null
+                && mAlarmInstance.mAlarmState == AlarmInstance.FIRED_STATE) {
+            setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_OFF, mContext);
+            LogUtils.d(LOGTAG, "onDestroy setSnoozeState = " + mAlarmInstance);
+            AlarmStateManager.setSnoozeState(this, mAlarmInstance, false );
         }
     }
 
@@ -480,6 +561,10 @@ public class AlarmActivity extends AppCompatActivity
 
         // Unbind here, otherwise alarm will keep ringing until activity finishes.
         unbindAlarmService();
+
+        if (mIsPowerOffAlarm) {
+            setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_OFF, mContext);
+        }
     }
 
     /**
@@ -501,6 +586,10 @@ public class AlarmActivity extends AppCompatActivity
 
         // Unbind here, otherwise alarm will keep ringing until activity finishes.
         unbindAlarmService();
+
+        if (mIsPowerOffAlarm) {
+            showPowerOffDialog();
+        }
     }
 
     /**
@@ -616,7 +705,9 @@ public class AlarmActivity extends AppCompatActivity
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        finish();
+                        if (!mIsPowerOffAlarm) {
+                            finish();
+                        }
                     }
                 }, ALERT_DISMISS_DELAY_MILLIS);
             }
@@ -624,4 +715,53 @@ public class AlarmActivity extends AppCompatActivity
 
         return alertAnimator;
     }
+
+    /**
+     * Implement power off function immediately.
+     */
+    private void powerOff() {
+        Intent requestShutdown = new Intent(Intent.ACTION_REQUEST_SHUTDOWN);
+        requestShutdown.putExtra(Intent.EXTRA_KEY_CONFIRM, false);
+        requestShutdown.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        mContext.startActivity(requestShutdown);
+    }
+
+    private void showPowerOffDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.power_on_text)
+               .setTitle(R.string.alarm_list_title);
+        builder.setPositiveButton(R.string.power_on_yes_text,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mBootHandler.sendEmptyMessage(SHUTDOWN_ALARM_VIEW);
+                    }
+                });
+        builder.setNegativeButton(R.string.power_on_no_text,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mBootHandler.sendEmptyMessage(SHUTDOWN_POWER_OFF);
+                    }
+                });
+
+        AlertDialog poweroffDialog = builder.create();
+        poweroffDialog.setCancelable(false);
+        poweroffDialog.setCanceledOnTouchOutside(false);
+        poweroffDialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_FULLSCREEN |
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+        poweroffDialog.show();
+    }
+
+    private void setPowerOffAlarmMode(int powerOffAlarmMode, Context context) {
+        Settings.System.putInt(context.getContentResolver(), POWER_OFF_ALARM_MODE,
+                powerOffAlarmMode);
+        mIsPowerOffAlarm = (powerOffAlarmMode == POWER_OFF_ALARM_MODE_ON) ? true : false;
+    }
+
 }
