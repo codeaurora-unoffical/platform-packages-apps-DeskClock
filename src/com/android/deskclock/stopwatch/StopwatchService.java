@@ -64,15 +64,13 @@ public class StopwatchService extends Service {
         long actionTime = intent.getLongExtra(Stopwatches.MESSAGE_TIME, Utils.getTimeNow());
         boolean showNotif = intent.getBooleanExtra(Stopwatches.SHOW_NOTIF, true);
         // Update the stopwatch circle when the app is open or is being opened.
-        boolean updateCircle = !showNotif
-                || intent.getAction().equals(Stopwatches.RESET_AND_LAUNCH_STOPWATCH);
+        boolean updateCircle = showNotif;
         switch(actionType) {
             case HandleDeskClockApiCalls.ACTION_START_STOPWATCH:
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this) ;
-                prefs.edit().putBoolean(Stopwatches.NOTIF_CLOCK_RUNNING, true).apply();
-
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 mStartTime = actionTime;
                 writeSharedPrefsStarted(mStartTime, updateCircle);
+                prefs.edit().putBoolean(Stopwatches.NOTIF_CLOCK_RUNNING, true).apply();
                 if (showNotif) {
                     setNotification(mStartTime - mElapsedTime, true, mNumLaps);
                 } else {
@@ -91,10 +89,9 @@ public class StopwatchService extends Service {
                 break;
             case HandleDeskClockApiCalls.ACTION_STOP_STOPWATCH:
                 prefs = PreferenceManager.getDefaultSharedPreferences(this);
-                prefs.edit().putBoolean(Stopwatches.NOTIF_CLOCK_RUNNING, false).apply();
-
                 mElapsedTime = mElapsedTime + (actionTime - mStartTime);
                 writeSharedPrefsStopped(mElapsedTime, updateCircle);
+                prefs.edit().putBoolean(Stopwatches.NOTIF_CLOCK_RUNNING, false).apply();
                 if (showNotif) {
                     setNotification(actionTime - mElapsedTime, false, mNumLaps);
                 } else {
@@ -456,7 +453,7 @@ public class StopwatchService extends Service {
             editor.apply();
         }
     }
-
+    
     private void writeSharedPrefsReset(boolean updateCircle) {
         writeToSharedPrefs(null, null, null, Stopwatches.STOPWATCH_RESET, updateCircle);
     }

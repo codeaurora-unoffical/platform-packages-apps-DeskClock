@@ -312,6 +312,14 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        if(mAdapter != null){
+            mAdapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
 

@@ -462,14 +462,7 @@ public class TimerFullScreenFragment extends DeskClockFragment
         mFab.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                final Animator revealAnimator = getRevealAnimator(mFab, Color.WHITE);
-                revealAnimator.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        updateAllTimesUpTimers();
-                    }
-                });
-                revealAnimator.start();
+                updateAllTimesUpTimers();
             }
         });
     }
