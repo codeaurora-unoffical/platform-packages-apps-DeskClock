@@ -22,7 +22,9 @@ import android.os.Bundle;
 import android.support.v7.widget.PopupMenu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.ImageButton;
+import android.widget.AbsListView.OnScrollListener;
 
 public class DeskClockFragment extends Fragment {
 
@@ -93,5 +95,25 @@ public class DeskClockFragment extends Fragment {
                 fakeOverflow.show();
             }
         });
+    }
+
+    public class DeskClockScrollListener implements OnScrollListener {
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                int visibleItemCount, int totalItemCount) {
+            // do nothing
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+            if (SCROLL_STATE_TOUCH_SCROLL == scrollState) {
+                View currentFocus = getActivity().getCurrentFocus();
+                if (currentFocus != null) {
+                    currentFocus.clearFocus();
+                }
+            }
+        }
+
     }
 }

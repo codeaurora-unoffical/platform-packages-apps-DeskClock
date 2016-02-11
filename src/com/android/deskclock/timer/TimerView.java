@@ -17,10 +17,12 @@
 package com.android.deskclock.timer;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -36,6 +38,13 @@ public class TimerView extends LinearLayout {
     private Typeface mOriginalHoursTypeface;
     private Typeface mOriginalMinutesTypeface;
     private final int mWhiteColor, mGrayColor;
+    private final static float SMALL_FONT_SCALE = 0.85F;
+    private final static float NORMAL_FONT_SCALE = 1.0F;
+    private final static float BIG_FONT_SCALE = 1.15F;
+    private final static int WIDTHPIXELS_480 = 480;
+    private final static int WIDTHPIXELS_720 = 720;
+    private final static int WIDTHPIXELS_1080 = 1080;
+    private final static int WIDTHPIXELS_854 = 854;
 
     @SuppressWarnings("unused")
     public TimerView(Context context) {
@@ -44,6 +53,8 @@ public class TimerView extends LinearLayout {
 
     public TimerView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        resetResource();
 
         mAndroidClockMonoThin =
                 Typeface.createFromAsset(context.getAssets(), "fonts/AndroidClockMono-Thin.ttf");
@@ -140,5 +151,39 @@ public class TimerView extends LinearLayout {
         if (mSeconds != null) {
             mSeconds.setText(String.format("%02d", seconds));
         }
+    }
+
+    private void resetResource() {
+        Resources res = super.getResources();
+        Configuration config = res.getConfiguration();
+
+        config.fontScale = getFontScale(config, res.getDisplayMetrics());
+
+        res.updateConfiguration(config, res.getDisplayMetrics());
+    }
+
+    private float getFontScale(Configuration config,
+            DisplayMetrics displayMetrics) {
+        float fontScale = config.fontScale;
+        if (config.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            if (displayMetrics.widthPixels <= WIDTHPIXELS_480
+                    && fontScale > SMALL_FONT_SCALE) {
+                fontScale = SMALL_FONT_SCALE;
+            } else if (displayMetrics.widthPixels <= WIDTHPIXELS_720
+                    && displayMetrics.widthPixels > WIDTHPIXELS_480
+                    && fontScale > NORMAL_FONT_SCALE) {
+                fontScale = NORMAL_FONT_SCALE;
+            } else if (displayMetrics.widthPixels <= WIDTHPIXELS_1080
+                    && displayMetrics.widthPixels > WIDTHPIXELS_720
+                    && fontScale > BIG_FONT_SCALE) {
+                fontScale = BIG_FONT_SCALE;
+            }
+        } else if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (displayMetrics.widthPixels <= WIDTHPIXELS_854
+                    && fontScale > BIG_FONT_SCALE) {
+                fontScale = BIG_FONT_SCALE;
+            }
+        }
+        return fontScale;
     }
 }

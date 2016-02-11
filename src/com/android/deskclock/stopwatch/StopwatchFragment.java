@@ -47,6 +47,7 @@ import com.android.deskclock.R;
 import com.android.deskclock.Utils;
 import com.android.deskclock.events.Events;
 import com.android.deskclock.timer.CountingTimerView;
+import com.android.deskclock.widget.sgv.StaggeredGridView.ScrollListener;
 
 import java.util.ArrayList;
 
@@ -75,7 +76,7 @@ public class StopwatchFragment extends DeskClockFragment
     private View mEndSpace;
     private View mBottomSpace;
     private boolean mSpacersUsed;
-
+    private DeskClockScrollListener mDeskClockScrollListener;
     private AccessibilityManager mAccessibilityManager;
 
     // Used for calculating the time from the start taking into account the pause times
@@ -326,8 +327,9 @@ public class StopwatchFragment extends DeskClockFragment
         mLapsList = (ListView)v.findViewById(R.id.laps_list);
         mLapsList.setDividerHeight(0);
         mLapsAdapter = new LapsListAdapter(getActivity());
+        mDeskClockScrollListener = new DeskClockScrollListener();
         mLapsList.setAdapter(mLapsAdapter);
-
+        mLapsList.setOnScrollListener(mDeskClockScrollListener);
         // Timer text serves as a virtual start/stop button.
         mTimeText.registerVirtualButtonAction(new Runnable() {
             @Override

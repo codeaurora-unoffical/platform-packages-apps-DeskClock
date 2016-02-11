@@ -102,6 +102,7 @@ public class LabelDialogFragment extends DialogFragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 setLabelBoxBackground(s == null || TextUtils.isEmpty(s));
+                getArguments().putString(KEY_LABEL, s.toString());
             }
 
             @Override

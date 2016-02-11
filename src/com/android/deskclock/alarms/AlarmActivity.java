@@ -359,17 +359,6 @@ public class AlarmActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mIsPowerOffAlarm && mAlarmInstance != null
-                && mAlarmInstance.mAlarmState == AlarmInstance.FIRED_STATE) {
-            setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_OFF, mContext);
-            LogUtils.d(LOGTAG, "onDestroy setSnoozeState = " + mAlarmInstance);
-            AlarmStateManager.setSnoozeState(this, mAlarmInstance, false );
-        }
-    }
-
-    @Override
     public boolean dispatchKeyEvent(@NonNull KeyEvent keyEvent) {
         // Do this in dispatch to intercept a few of the system keys.
         LogUtils.v(LOGTAG, "dispatchKeyEvent: %s", keyEvent);

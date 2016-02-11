@@ -36,6 +36,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -86,6 +88,7 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
     private LayoutInflater mFactory;
     private ListView mCitiesList;
     private CityAdapter mAdapter;
+    private CitiesScrollListener mCitiesScrollListener;
     private HashMap<String, CityObj> mUserSelectedCities;
     private Calendar mCalendar;
 
@@ -468,6 +471,7 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mSortType = mPrefs.getInt(PREF_SORT, SORT_BY_NAME);
         mSelectedCitiesHeaderString = getString(R.string.selected_cities_label);
+        mCitiesScrollListener = new CitiesScrollListener();
         if (savedInstanceState != null) {
             mQueryTextBuffer.append(savedInstanceState.getString(KEY_SEARCH_QUERY));
             mSearchMode = savedInstanceState.getBoolean(KEY_SEARCH_MODE);
@@ -489,6 +493,7 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
         mCitiesList = (ListView) findViewById(R.id.cities_list);
         setFastScroll(TextUtils.isEmpty(mQueryTextBuffer.toString().trim()));
         mCitiesList.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+        mCitiesList.setOnScrollListener(mCitiesScrollListener);
         mUserSelectedCities = Cities.readCitiesFromSharedPrefs(
                 PreferenceManager.getDefaultSharedPreferences(this));
         mAdapter = new CityAdapter(this, mFactory);
@@ -629,5 +634,25 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
     @Override
     public boolean onQueryTextSubmit(String arg0) {
         return false;
+    }
+
+    protected class CitiesScrollListener implements OnScrollListener {
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                int visibleItemCount, int totalItemCount) {
+            // do nothing
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+            if (SCROLL_STATE_TOUCH_SCROLL == scrollState) {
+                View currentFocus = getCurrentFocus();
+                if (currentFocus != null) {
+                    currentFocus.clearFocus();
+                }
+            }
+        }
+
     }
 }

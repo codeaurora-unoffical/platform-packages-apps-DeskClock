@@ -154,6 +154,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
     private int mSelectSource = SEL_SRC_RINGTONE;
 
     private Loader mCursorLoader = null;
+    private DeskClockScrollListener mDeskClockScrollListener;
 
     // Saved states for undo
     private Alarm mDeletedAlarm;
@@ -269,7 +270,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
 
         mFooterView = v.findViewById(R.id.alarms_footer_view);
         mFooterView.setOnTouchListener(this);
-
+        mDeskClockScrollListener = new DeskClockScrollListener();
         mAdapter = new AlarmItemAdapter(getActivity(),
                 expandedId, repeatCheckedIds, selectedAlarms, previousDayMap, mAlarmsList);
         mAdapter.registerDataSetObserver(new DataSetObserver() {
@@ -304,7 +305,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         mAlarmsList.setAdapter(mAdapter);
         mAlarmsList.setVerticalScrollBarEnabled(true);
         mAlarmsList.setOnCreateContextMenuListener(this);
-
+        mAlarmsList.setOnScrollListener(mDeskClockScrollListener);
         if (mUndoShowing) {
             showUndoBar();
         }
