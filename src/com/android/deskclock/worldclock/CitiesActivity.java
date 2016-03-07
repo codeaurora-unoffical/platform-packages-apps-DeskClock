@@ -28,6 +28,7 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -44,6 +45,7 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ListView;
@@ -647,7 +649,7 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
         public void onScrollStateChanged(AbsListView view, int scrollState) {
             if (SCROLL_STATE_TOUCH_SCROLL == scrollState) {
                 View currentFocus = getCurrentFocus();
-                if (currentFocus != null) {
+                if (currentFocus != null && !(currentFocus instanceof EditText)) {
                     currentFocus.clearFocus();
                 }
             }
