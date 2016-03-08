@@ -44,7 +44,6 @@
         <item>A<xliff:g id="separator">=</xliff:g>Addis Ababa</item>
         <item>A<xliff:g id="separator">=</xliff:g>Algiers</item>
         <item>B<xliff:g id="separator">=</xliff:g>Blantyre</item>
-        <item>B<xliff:g id="separator">=</xliff:g>Brazzaville</item>
         <item>C<xliff:g id="separator">=</xliff:g>Cairo</item>
         <item>C<xliff:g id="separator">=</xliff:g>Casablanca</item>
         <item>C<xliff:g id="separator">=</xliff:g>Conakry</item>
@@ -56,13 +55,11 @@
         <item>H<xliff:g id="separator">=</xliff:g>Harare</item>
         <item>J<xliff:g id="separator">=</xliff:g>Johannesburg</item>
         <item>K<xliff:g id="separator">=</xliff:g>Kampala</item>
-        <item>K<xliff:g id="separator">=</xliff:g>Khartoum</item>
         <item>K<xliff:g id="separator">=</xliff:g>Kigali</item>
         <item>K<xliff:g id="separator">=</xliff:g>Kinshasa</item>
         <item>L<xliff:g id="separator">=</xliff:g>Lagos</item>
         <item>M<xliff:g id="separator">=</xliff:g>Maseru</item>
         <item>M<xliff:g id="separator">=</xliff:g>Mogadishu</item>
-        <item>N<xliff:g id="separator">=</xliff:g>Nairobi</item>
         <item>S<xliff:g id="separator">=</xliff:g>São Tomé</item>
         <item>T<xliff:g id="separator">=</xliff:g>Timbuktu</item>
         <item>T<xliff:g id="separator">=</xliff:g>Tripoli</item>
@@ -121,7 +118,6 @@
         <item>C<xliff:g id="separator">=</xliff:g>Center</item>
         <item>N<xliff:g id="separator">=</xliff:g>New Salem</item>
         <item>P<xliff:g id="separator">=</xliff:g>Panama</item>
-        <item>P<xliff:g id="separator">=</xliff:g>Phoenix</item>
         <item>P<xliff:g id="separator">=</xliff:g>Port of Spain</item>
         <item>P<xliff:g id="separator">=</xliff:g>Port-au-Prince</item>
         <item>P<xliff:g id="separator">=</xliff:g>Puerto Rico</item>
@@ -131,7 +127,6 @@
         <item>S<xliff:g id="separator">=</xliff:g>St. Kitts</item>
         <item>S<xliff:g id="separator">=</xliff:g>St. Lucia</item>
         <item>S<xliff:g id="separator">=</xliff:g>St. Thomas</item>
-        <item>T<xliff:g id="separator">=</xliff:g>Tijuana</item>
         <item>T<xliff:g id="separator">=</xliff:g>Toronto</item>
         <item>V<xliff:g id="separator">=</xliff:g>Vancouver</item>
         <item>W<xliff:g id="separator">=</xliff:g>Winnipeg</item>
@@ -146,7 +141,6 @@
         <item>B<xliff:g id="separator">=</xliff:g>Baku</item>
         <item>B<xliff:g id="separator">=</xliff:g>Bangkok</item>
         <item>B<xliff:g id="separator">=</xliff:g>Beirut</item>
-        <item>C<xliff:g id="separator">=</xliff:g>Calcutta</item>
         <item>D<xliff:g id="separator">=</xliff:g>Damascus</item>
         <item>D<xliff:g id="separator">=</xliff:g>Dhaka</item>
         <item>D<xliff:g id="separator">=</xliff:g>Dubai</item>
@@ -387,7 +381,6 @@
         <item>Africa/Addis_Ababa</item>
         <item>Africa/Algiers</item>
         <item>Africa/Blantyre</item>
-        <item>Africa/Brazzaville</item>
         <item>Africa/Cairo</item>
         <item>Africa/Casablanca</item>
         <item>Africa/Conakry</item>
@@ -399,13 +392,11 @@
         <item>Africa/Harare</item>
         <item>Africa/Johannesburg</item>
         <item>Africa/Kampala</item>
-        <item>Africa/Khartoum</item>
         <item>Africa/Kigali</item>
         <item>Africa/Kinshasa</item>
         <item>Africa/Lagos</item>
         <item>Africa/Maseru</item>
         <item>Africa/Mogadishu</item>
-        <item>Africa/Nairobi</item>
         <item>Africa/Sao_Tome</item>
         <item>Africa/Timbuktu</item>
         <item>Africa/Tripoli</item>
@@ -464,7 +455,6 @@
         <item>America/North_Dakota/Center</item>
         <item>America/North_Dakota/New_Salem</item>
         <item>America/Panama</item>
-        <item>America/Phoenix</item>
         <item>America/Port_of_Spain</item>
         <item>America/Port-au-Prince</item>
         <item>America/Puerto_Rico</item>
@@ -474,7 +464,6 @@
         <item>America/St_Kitts</item>
         <item>America/St_Lucia</item>
         <item>America/St_Thomas</item>
-        <item>America/Tijuana</item>
         <item>America/Toronto</item>
         <item>America/Vancouver</item>
         <item>America/Winnipeg</item>
@@ -489,7 +478,6 @@
         <item>Asia/Baku</item>
         <item>Asia/Bangkok</item>
         <item>Asia/Beirut</item>
-        <item>Asia/Calcutta</item>
         <item>Asia/Damascus</item>
         <item>Asia/Dhaka</item>
         <item>Asia/Dubai</item>
