@@ -28,20 +28,24 @@ import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.EditText;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ListView;
@@ -93,6 +97,7 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
     private Calendar mCalendar;
 
     private SearchView mSearchView;
+    private MenuItem mSearchMenuItem;
     private StringBuffer mQueryTextBuffer = new StringBuffer();
     private boolean mSearchMode;
     private int mPosition = -1;
@@ -101,7 +106,12 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
     private int mSortType;
 
     private String mSelectedCitiesHeaderString;
+    private boolean mSearchMenuItemExpanded = false;
+    private String mSearchQuery;
 
+    private static final String EMPTY_QUERY = "";
+    private static final String SAVE_KEY_SEARCH_QUERY = "search_query";
+    private static final String SAVE_KEY_SEARCH_MENU_EXPANDED = "search_expanded";
     /***
      * Adapter for a list of cities with the respected time zone. The Adapter
      * sorts the list alphabetically and create an indexer.
@@ -476,6 +486,8 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
             mQueryTextBuffer.append(savedInstanceState.getString(KEY_SEARCH_QUERY));
             mSearchMode = savedInstanceState.getBoolean(KEY_SEARCH_MODE);
             mPosition = savedInstanceState.getInt(KEY_LIST_POSITION);
+            mSearchMenuItemExpanded = savedInstanceState.getBoolean(SAVE_KEY_SEARCH_MENU_EXPANDED);
+            mSearchQuery = savedInstanceState.getString(SAVE_KEY_SEARCH_QUERY);
         }
         updateLayout();
     }
@@ -486,6 +498,10 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
         bundle.putString(KEY_SEARCH_QUERY, mQueryTextBuffer.toString());
         bundle.putBoolean(KEY_SEARCH_MODE, mSearchMode);
         bundle.putInt(KEY_LIST_POSITION, mCitiesList.getFirstVisiblePosition());
+        boolean isExpanded = (mSearchMenuItem != null) && mSearchMenuItem.isActionViewExpanded();
+        bundle.putBoolean(SAVE_KEY_SEARCH_MENU_EXPANDED, isExpanded);
+        String query = (mSearchView != null) ? mSearchView.getQuery().toString() : EMPTY_QUERY;
+        bundle.putString(SAVE_KEY_SEARCH_QUERY, query);
     }
 
     private void updateLayout() {
@@ -563,32 +579,17 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
             Utils.prepareHelpMenuItem(this, help);
         }
 
-        MenuItem searchMenu = menu.findItem(R.id.menu_item_search);
+        mSearchMenuItem = menu.findItem(R.id.menu_item_search);
         mSearchView = new SearchView(this);
-        MenuItemCompat.setActionView(searchMenu, mSearchView);
-        mSearchView.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
-        mSearchView.setOnSearchClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                mSearchMode = true;
-            }
-        });
-        mSearchView.setOnCloseListener(new SearchView.OnCloseListener() {
-
-            @Override
-            public boolean onClose() {
-                mSearchMode = false;
-                return false;
-            }
-        });
+        MenuItemCompat.setActionView(mSearchMenuItem, mSearchView);
         if (mSearchView != null) {
             mSearchView.setOnQueryTextListener(this);
             mSearchView.setQuery(mQueryTextBuffer.toString(), false);
-            if (mSearchMode) {
-                mSearchView.requestFocus();
-                mSearchView.setIconified(false);
+            if (mSearchMenuItemExpanded) {
+                mSearchMenuItem.expandActionView();
             }
+            final String query = mSearchQuery;
+            mSearchView.setQuery(query, true);
         }
         return super.onCreateOptionsMenu(menu);
     }
@@ -648,11 +649,12 @@ public class CitiesActivity extends BaseActivity implements OnCheckedChangeListe
         public void onScrollStateChanged(AbsListView view, int scrollState) {
             if (SCROLL_STATE_TOUCH_SCROLL == scrollState) {
                 View currentFocus = getCurrentFocus();
-                if (currentFocus != null) {
+                if (currentFocus != null && !(currentFocus instanceof EditText)) {
                     currentFocus.clearFocus();
                 }
             }
         }
 
     }
+
 }
