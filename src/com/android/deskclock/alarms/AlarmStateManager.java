@@ -20,7 +20,6 @@ import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -146,13 +145,6 @@ public final class AlarmStateManager extends BroadcastReceiver {
 
     // A factory for the current time; can be mocked for testing purposes.
     private static CurrentTimeFactory sCurrentTimeFactory;
-
-    private static boolean sRtcPowerUp = false;
-    private static final String ACTION_POWER_ON_ALERT =
-            "org.codeaurora.poweronalert.action.POWER_ON_ALERT";
-    private static final String ALARM_POWER_OFF_ACTION =
-            "org.codeaurora.poweronalert.action.ALARM_POWER_OFF";
-    private static final String FIRST_ALARM_FLAG = "first_alarm";
 
     // Schedules alarm state transitions; can be mocked for testing purposes.
     private static StateChangeScheduler sStateChangeScheduler =
@@ -627,14 +619,6 @@ public final class AlarmStateManager extends BroadcastReceiver {
 
         // Instance is not valid anymore, so find next alarm that will fire and notify system
         updateNextAlarm(context);
-        if (isPowerOffAlarm(context)) {
-            try {
-                context.startActivity(new Intent(ACTION_POWER_ON_ALERT)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (ActivityNotFoundException ex) {
-                // do nothing, the powerOnAlert app couldn't be found.
-            }
-        }
     }
 
     /**
@@ -857,9 +841,6 @@ public final class AlarmStateManager extends BroadcastReceiver {
                 break;
             case AlarmInstance.MISSED_STATE:
                 setMissedState(context, instance);
-                if (isPowerOffAlarm(context)) {
-                    context.sendBroadcast(new Intent(ALARM_POWER_OFF_ACTION));
-                }
                 break;
             case AlarmInstance.PREDISMISSED_STATE:
                 setPreDismissState(context, instance);
@@ -1087,23 +1068,5 @@ public final class AlarmStateManager extends BroadcastReceiver {
                 pendingPowerOffIntent.cancel();
             }
         }
-    }
-
-    public static void setRtcPowerUp(Context context, boolean isRtcPowerUp) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        prefs.edit().putBoolean(FIRST_ALARM_FLAG, isRtcPowerUp).commit();
-    }
-
-    /**
-     * @return true if the alarm is a power off alarm
-     */
-    public static boolean isPowerOffAlarm(Context context) {
-        boolean isPoAlarm = false;
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        if (prefs.getBoolean(FIRST_ALARM_FLAG, false)) {
-            isPoAlarm = true;
-            setRtcPowerUp(context,false);
-        }
-        return isPoAlarm;
     }
 }
