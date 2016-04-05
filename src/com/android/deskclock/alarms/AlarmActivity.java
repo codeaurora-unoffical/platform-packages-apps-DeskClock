@@ -301,7 +301,8 @@ public class AlarmActivity extends AppCompatActivity
         mPulseAnimator.start();
 
         if (mAlarmInstance != null && mIsPowerOffAlarm) {
-            AlarmStateManager.setFiredState(getApplicationContext(), mAlarmInstance);
+            AlarmStateManager.setFiredState(mContext, mAlarmInstance);
+            AlarmStateManager.fixAlarmInstances(mContext);
         }
     }
 
