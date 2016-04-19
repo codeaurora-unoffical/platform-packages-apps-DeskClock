@@ -100,6 +100,7 @@ public class AlarmActivity extends AppCompatActivity
     private static final int SHUTDOWN_POWER_OFF = 2;
 
     private Context mContext;
+    private AlertDialog poweroffDialog = null;
 
     private Handler mBootHandler = new Handler() {
         @Override
@@ -209,9 +210,17 @@ public class AlarmActivity extends AppCompatActivity
         }
 
         if (mAlarmInstance == null) {
-            // The alarm was deleted before the activity got created, so just finish()
-            LogUtils.e(LOGTAG, "Error displaying alarm for intent: %s", getIntent());
-            finish();
+            if (Settings.System.getInt(mContext.getContentResolver(), POWER_OFF_ALARM_MODE,
+                0) == 1) {
+                mIsPowerOffAlarm = true;
+                activitySettings();
+
+                showPowerOffDialog();
+            } else {
+                // The alarm was deleted before the activity got created, so just finish()
+                LogUtils.e(LOGTAG, "Error displaying alarm for intent: %s", getIntent());
+                finish();
+            }
             return;
         } else if (!mIsPowerOffAlarm && mAlarmInstance.mAlarmState != AlarmInstance.FIRED_STATE) {
             LogUtils.i(LOGTAG, "Skip displaying alarm for instance: %s", mAlarmInstance);
@@ -226,37 +235,7 @@ public class AlarmActivity extends AppCompatActivity
                 .getString(SettingsActivity.KEY_VOLUME_BEHAVIOR,
                         SettingsActivity.DEFAULT_VOLUME_BEHAVIOR);
 
-        if (mIsPowerOffAlarm) {
-            getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        } else {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
-        }
-
-        // Hide navigation bar to minimize accidental tap on Home key
-        hideNavigationBar();
-
-        // Close dialogs and window shade, so this is fully visible
-        sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-
-        // In order to allow tablets to freely rotate and phones to stick
-        // with "nosensor" (use default device orientation) we have to have
-        // the manifest start with an orientation of unspecified" and only limit
-        // to "nosensor" for phones. Otherwise we get behavior like in b/8728671
-        // where tablets start off in their default orientation and then are
-        // able to freely rotate.
-        if (!getResources().getBoolean(R.bool.config_rotateAlarmAlert)) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
-        }
+        activitySettings();
 
         mAccessibilityManager = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
 
@@ -279,9 +258,6 @@ public class AlarmActivity extends AppCompatActivity
         titleView.setText(mAlarmInstance.getLabelOrDefault(this));
         Utils.setTimeFormat(this, digitalClock,
                 getResources().getDimensionPixelSize(R.dimen.main_ampm_font_size));
-
-        mCurrentHourColor = Utils.getCurrentHourColor();
-        getWindow().setBackgroundDrawable(new ColorDrawable(mCurrentHourColor));
 
         mAlarmButton.setOnTouchListener(this);
         mSnoozeButton.setOnClickListener(this);
@@ -341,7 +317,9 @@ public class AlarmActivity extends AppCompatActivity
             mReceiverRegistered = true;
         }
 
-        resetAnimations();
+        if (mAlarmInstance != null) {
+            resetAnimations();
+        }
     }
 
     @Override
@@ -356,6 +334,15 @@ public class AlarmActivity extends AppCompatActivity
             mReceiverRegistered = false;
         }
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onStop();
+        if (poweroffDialog != null) {
+            poweroffDialog.dismiss();
+        }
+        LogUtils.v(LOGTAG, "deskclock Alarm Activity on destroy");
     }
 
     @Override
@@ -492,6 +479,47 @@ public class AlarmActivity extends AppCompatActivity
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
+    }
+
+
+    /**
+     * Activity Settings for both normal alarm and power off alarm
+     */
+    private void activitySettings() {
+        if (mIsPowerOffAlarm) {
+            getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        } else {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    | WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+        }
+
+        // Hide navigation bar to minimize accidental tap on Home key
+        hideNavigationBar();
+
+        // Close dialogs and window shade, so this is fully visible
+        sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+
+        // In order to allow tablets to freely rotate and phones to stick
+        // with "nosensor" (use default device orientation) we have to have
+        // the manifest start with an orientation of unspecified" and only limit
+        // to "nosensor" for phones. Otherwise we get behavior like in b/8728671
+        // where tablets start off in their default orientation and then are
+        // able to freely rotate.
+        if (!getResources().getBoolean(R.bool.config_rotateAlarmAlert)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
+        }
+
+        mCurrentHourColor = Utils.getCurrentHourColor();
+        getWindow().setBackgroundDrawable(new ColorDrawable(mCurrentHourColor));
     }
 
     private void hintSnooze() {
@@ -734,7 +762,7 @@ public class AlarmActivity extends AppCompatActivity
                     }
                 });
 
-        AlertDialog poweroffDialog = builder.create();
+        poweroffDialog = builder.create();
         poweroffDialog.setCancelable(false);
         poweroffDialog.setCanceledOnTouchOutside(false);
         poweroffDialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
