@@ -199,11 +199,10 @@ public class AlarmActivity extends AppCompatActivity
         mContext = getApplicationContext();
 
         if (intentAction == ACTION_POWER_OFF_ALARM) {
-            setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_ON, mContext);
-        }
-
-        if (mIsPowerOffAlarm) {
             mAlarmInstance = AlarmInstance.getFirstAlarmInstance(mContext.getContentResolver());
+            if (mAlarmInstance != null) {
+                setPowerOffAlarmMode(POWER_OFF_ALARM_MODE_ON, mContext);
+            }
         } else if (intentData != null) {
             long instanceId = AlarmInstance.getId(intentData);
             mAlarmInstance = AlarmInstance.getInstance(this.getContentResolver(), instanceId);
