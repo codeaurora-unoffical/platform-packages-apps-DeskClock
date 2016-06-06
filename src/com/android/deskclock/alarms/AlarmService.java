@@ -400,15 +400,25 @@ public class AlarmService extends Service {
     private void handleAction(int action) {
         switch (action) {
             case ALARM_SNOOZE:
+                Intent snoozeIntent = null;
                 // Setup Snooze Action
-                Intent snoozeIntent = AlarmStateManager.createStateChangeIntent(this, "SNOOZE_TAG",
-                        mCurrentAlarm, AlarmInstance.SNOOZE_STATE);
+                if (AlarmActivity.mIsAlarmBoot) {
+                    snoozeIntent = new Intent(AlarmActivity.ALARM_SNOOZE_ACTION);
+                } else {
+                    snoozeIntent = AlarmStateManager.createStateChangeIntent(this, "SNOOZE_TAG",
+                            mCurrentAlarm, AlarmInstance.SNOOZE_STATE);
+                }
                 sendBroadcast(snoozeIntent);
                 break;
             case ALARM_DISMISS:
+                Intent dismissIntent = null;
                 // Setup Dismiss Action
-                Intent dismissIntent = AlarmStateManager.createStateChangeIntent(this, "DISMISS_TAG",
-                        mCurrentAlarm, AlarmInstance.DISMISSED_STATE);
+                if (AlarmActivity.mIsAlarmBoot) {
+                    dismissIntent = new Intent(AlarmActivity.ALARM_DISMISS_ACTION);
+                } else {
+                    dismissIntent = AlarmStateManager.createStateChangeIntent(this, "DISMISS_TAG",
+                            mCurrentAlarm, AlarmInstance.DISMISSED_STATE);
+                }
                 sendBroadcast(dismissIntent);
                 break;
             case ALARM_NO_ACTION:
