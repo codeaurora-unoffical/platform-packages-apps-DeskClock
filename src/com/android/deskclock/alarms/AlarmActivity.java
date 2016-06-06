@@ -143,9 +143,10 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
                         dismiss();
                         break;
                     case AlarmService.ALARM_DONE_ACTION:
-                        if (!mIsAlarmBoot || mIsSoonze) {
-                            finish();
+                        if(mIsAlarmBoot) {
+                           updateAirplaneMode(mDefaultAirplaneMode);
                         }
+                        finish();
                         break;
                     default:
                         LogUtils.i(LOGTAG, "Unknown broadcast: %s", action);
@@ -307,29 +308,7 @@ public class AlarmActivity extends Activity implements View.OnClickListener, Vie
         mReceiverRegistered = true;
 
         if (mAlarmInstance != null && mIsAlarmBoot) {
-            AlarmService.startAlarm(getApplicationContext(), mAlarmInstance);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        LogUtils.d(LOGTAG, "onPause mIsAlarmBoot = " + mIsAlarmBoot);
-
-        if (mIsAlarmBoot) {
-            Settings.System.putString(mContext.getContentResolver(), POWER_OFF_ALARM_MODE, "false");
-            mIsAlarmBoot = false;
-
-            // Boot alarm should not pause, or else need to finish.
-            if (!mIsPowerOffing) {
-                if (!mAlarmHandled) {
-                    LogUtils.d(LOGTAG, "onPause setSnoozeState = " + mAlarmInstance);
-                    AlarmStateManager.setSnoozeState(this, mAlarmInstance, false /* showToast */);
-                    AlarmStateManager.isPowerOffAlarm(mContext);
-                }
-                updateAirplaneMode(mDefaultAirplaneMode);
-                finish();
-            }
+            AlarmStateManager.setFiredState(mContext, mAlarmInstance);
         }
     }
 
