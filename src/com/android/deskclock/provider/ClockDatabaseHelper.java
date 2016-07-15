@@ -34,6 +34,80 @@ import java.util.Calendar;
  * some common functionality.
  */
 class ClockDatabaseHelper extends SQLiteOpenHelper {
+
+    /**
+     * Added change profile
+     */
+    private static final int VERSION_9 = 11;
+
+    /**
+     * True if alarm should start off quiet and slowly increase volume
+     * <P>Type: BOOLEAN</P>
+     */
+    public static final String INCREASING_VOLUME = "incvol";
+
+    /**
+     * Profile to change to when alarm triggers
+     * <P>Type: STRING</P>
+     */
+    public static final String PROFILE = "profile";
+
+    static final String TEMP_ALARMS_TABLE_NAME = "temp_alarm_templates";
+    static final String TEMP_INSTANCES_TABLE_NAME = "temp_alarm_instances";
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if(oldVersion == VERSION_9 && newVersion == VERSION_7) {
+            //drop temp tables
+            db.execSQL("DROP TABLE IF EXISTS " + TEMP_ALARMS_TABLE_NAME + ";");
+            db.execSQL("DROP TABLE IF EXISTS " + TEMP_INSTANCES_TABLE_NAME + ";");
+
+            //create an temp alarm table according to old format
+            db.execSQL("CREATE TABLE " + TEMP_ALARMS_TABLE_NAME + " AS SELECT " +
+                    ClockContract.AlarmsColumns._ID  + " , " +
+                    ClockContract.AlarmsColumns.HOUR + " , " +
+                    ClockContract.AlarmsColumns.MINUTES + " , " +
+                    ClockContract.AlarmsColumns.DAYS_OF_WEEK + " , " +
+                    ClockContract.AlarmsColumns.ENABLED + " , " +
+                    ClockContract.AlarmsColumns.VIBRATE + " , " +
+                    ClockContract.AlarmsColumns.LABEL + " , " +
+                    ClockContract.AlarmsColumns.RINGTONE + " , " +
+                    ClockContract.AlarmsColumns.DELETE_AFTER_USE
+                    + " FROM " + ALARMS_TABLE_NAME + ";");
+
+            //drop the original alarm table
+            db.execSQL("DROP TABLE IF EXISTS " + ALARMS_TABLE_NAME + ";");
+
+            //alter temp alarm table name to original alarm table name
+            db.execSQL("ALTER TABLE " + TEMP_ALARMS_TABLE_NAME + " RENAME TO "
+                    + ALARMS_TABLE_NAME + ";");
+
+            //create an temp instance table according to old format
+            db.execSQL("CREATE TABLE " + TEMP_INSTANCES_TABLE_NAME + " AS SELECT " +
+                    ClockContract.InstancesColumns._ID  + " , " +
+                    ClockContract.InstancesColumns.YEAR + " , " +
+                    ClockContract.InstancesColumns.MONTH + " , " +
+                    ClockContract.InstancesColumns.DAY + " , " +
+                    ClockContract.InstancesColumns.HOUR + " , " +
+                    ClockContract.InstancesColumns.MINUTES + " , " +
+                    ClockContract.InstancesColumns.VIBRATE + " , " +
+                    ClockContract.InstancesColumns.LABEL + " , " +
+                    ClockContract.InstancesColumns.RINGTONE + " , " +
+                    ClockContract.InstancesColumns.ALARM_STATE + " , " +
+                    ClockContract.InstancesColumns.ALARM_ID
+                    + " FROM " + INSTANCES_TABLE_NAME + ";");
+
+            //drop the original instance table
+            db.execSQL("DROP TABLE IF EXISTS " + INSTANCES_TABLE_NAME + ";");
+
+            //alter temp instance table name to original instance table name
+            db.execSQL("ALTER TABLE " + TEMP_INSTANCES_TABLE_NAME + " RENAME TO "
+                    + INSTANCES_TABLE_NAME + ";");
+        } else {
+            super.onDowngrade(db, oldVersion, newVersion);
+        }
+    }
+
     /**
      * Original Clock Database.
      **/
