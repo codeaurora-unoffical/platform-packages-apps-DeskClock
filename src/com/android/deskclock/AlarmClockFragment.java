@@ -88,7 +88,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 
 import android.content.pm.PackageManager;
-
+import android.view.accessibility.AccessibilityNodeInfo;
 
 /**
  * AlarmClock application.
@@ -266,6 +266,7 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
 
         mMainLayout = (FrameLayout) v.findViewById(R.id.main);
         mAlarmsList = (ListView) v.findViewById(R.id.alarms_list);
+        mAlarmsList.setAccessibilityDelegate(new AlarmListAccessibilityDelegate());
 
         mUndoBar = (ActionableToastBar) v.findViewById(R.id.undo_bar);
         mUndoFrame = v.findViewById(R.id.undo_frame);
@@ -1719,5 +1720,17 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         }
         mLeftButton.setVisibility(View.INVISIBLE);
         mRightButton.setVisibility(View.INVISIBLE);
+    }
+
+
+    class AlarmListAccessibilityDelegate extends View.AccessibilityDelegate {
+        @Override
+        public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+            try {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+            } catch (IllegalArgumentException e) {
+                LogUtils.e("onInitializeAccessibilityNodeInfo: IllegalArgumentException");
+            }
+        }
     }
 }
