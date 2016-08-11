@@ -87,6 +87,9 @@ import java.io.File;
 import java.util.Calendar;
 import java.util.HashSet;
 
+import android.content.pm.PackageManager;
+
+
 /**
  * AlarmClock application.
  */
@@ -565,13 +568,13 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         // Save the last selected ringtone as the default for new alarms
         setDefaultRingtoneUri(uri);
 
-        asyncUpdateAlarm(mSelectedAlarm, false);
-
         // If the user chose an external ringtone and has not yet granted the permission to read
         // external storage, ask them for that permission now.
         if (!AlarmUtils.hasPermissionToDisplayRingtoneTitle(getActivity(), uri)) {
             final String[] perms = {Manifest.permission.READ_EXTERNAL_STORAGE};
             requestPermissions(perms, REQUEST_CODE_PERMISSIONS);
+        } else {
+             asyncUpdateAlarm(mSelectedAlarm, false);
         }
     }
 
@@ -619,6 +622,17 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
         // The permission change may alter the cached ringtone titles so clear them.
         // (e.g. READ_EXTERNAL_STORAGE is granted or revoked)
         mRingtoneTitleCache.clear();
+
+        switch (requestCode) {
+            case REQUEST_CODE_PERMISSIONS:
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    asyncUpdateAlarm(mSelectedAlarm, false);
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                break;
+        }
     }
 
     private class AlarmItemAdapter extends CursorAdapter {
@@ -1226,12 +1240,13 @@ public abstract class AlarmClockFragment extends DeskClockFragment implements
                             }
                             title = ringTone.getTitle(mContext);
                         }
+
+                        if (title != null) {
+                            mRingtoneTitleCache.putString(uri.toString(), title);
+                        }
                     }
                 }
 
-                if (title != null) {
-                    mRingtoneTitleCache.putString(uri.toString(), title);
-                }
             }
             return title;
         }
