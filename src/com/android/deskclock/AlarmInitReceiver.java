@@ -22,7 +22,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager.WakeLock;
-import android.os.SystemProperties;
 
 import com.android.deskclock.alarms.AlarmActivity;
 import com.android.deskclock.alarms.AlarmStateManager;
@@ -31,6 +30,8 @@ import com.android.deskclock.provider.Alarm;
 import com.android.deskclock.provider.AlarmInstance;
 import com.android.deskclock.data.DataModel;
 import com.android.deskclock.events.Events;
+
+import org.codeaurora.wrapper.deskclock.SystemProperties_Wrapper;
 
 import java.util.Calendar;
 import java.util.List;
@@ -100,8 +101,8 @@ public class AlarmInitReceiver extends BroadcastReceiver {
 
             // When ALARM_HANDLED_PROP is true which means that the alarm is handled in encryption
             // mode. Find the handled alarm by alarm time and set it as dismiss state.
-            if (!isAlarmBoot && SystemProperties.getBoolean(ALARM_HANDLED_PROP, false)) {
-                long instanceTime = SystemProperties.getLong(ALARM_INSTANCE_PROP, 0);
+            if (!isAlarmBoot && SystemProperties_Wrapper.getBoolean(ALARM_HANDLED_PROP, false)) {
+                long instanceTime = SystemProperties_Wrapper.getLong(ALARM_INSTANCE_PROP, 0);
                 if (instanceTime != 0) {
                     List<AlarmInstance> alarmInstances = AlarmInstance
                             .getInstances(cr, null);
@@ -127,7 +128,7 @@ public class AlarmInitReceiver extends BroadcastReceiver {
         //        in this mode.
         if (Intent.ACTION_BOOT_COMPLETED.equals(action) && isAlarmBoot) {
             AlarmInstance instance = AlarmInstance.getFirstAlarmInstance(cr);
-            String cryptState = SystemProperties.get(DECRYPT_PROP);
+            String cryptState = SystemProperties_Wrapper.get(DECRYPT_PROP);
             if (instance == null && (ENCRYPTING_STATE.equals(cryptState) ||
                     ENCRYPTED_STATE.equals(cryptState))) {
                 Calendar c = Calendar.getInstance();
