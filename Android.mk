@@ -1,4 +1,12 @@
 LOCAL_PATH := $(call my-dir)
+
+# make deskclock_wrapper static lib
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := $(call all-java-files-under, src-Wrapper)
+LOCAL_MODULE := deskclock_wrapper
+LOCAL_MODULE_TAGS := optional
+include $(BUILD_STATIC_JAVA_LIBRARY)
+
 include $(CLEAR_VARS)
 
 LOCAL_RESOURCE_DIR := packages/apps/DeskClock/res
@@ -31,6 +39,7 @@ LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-appcompat
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-gridlayout
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
+LOCAL_STATIC_JAVA_LIBRARIES += deskclock_wrapper
 
 LOCAL_AAPT_FLAGS := --auto-add-overlay
 LOCAL_AAPT_FLAGS += --extra-packages android.support.design
